@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendrier Médical Senior</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <button id="stopButton" onclick="stopAlarm()">Arrêter l'alarme</button>
+
+  <div id="custom-alert">
+    <div class="alert-box">
+      <p id="alert-message"></p>
+      <button id="closeAlertBtn">Fermer</button>
+    </div>
+  </div>
+
+  <h1>Mon Calendrier Médical</h1>
+
+  <div class="medication-box">
+    <div>
+      <label class="time-label">Matin :</label>
+      <button class="status-btn taken" onclick="mark('matin','Pris')">Pris</button>
+      <button class="status-btn missed" onclick="mark('matin','Oublié')">Oublié</button>
+      <p id="status-matin"></p>
+    </div>
+    <div>
+      <label class="time-label">Midi :</label>
+      <button class="status-btn taken" onclick="mark('midi','Pris')">Pris</button>
+      <button class="status-btn missed" onclick="mark('midi','Oublié')">Oublié</button>
+      <p id="status-midi"></p>
+    </div>
+    <div>
+      <label class="time-label">Soir :</label>
+      <button class="status-btn taken" onclick="mark('soir','Pris')">Pris</button>
+      <button class="status-btn missed" onclick="mark('soir','Oublié')">Oublié</button>
+      <p id="status-soir"></p>
+    </div>
+  </div>
+
+  <div class="calendar-box">
+    <h2>Rappels Médicaux (Calendrier)</h2>
+    <div class="nav-buttons">
+      <button onclick="changeMonth(-1)">Mois précédent</button>
+      <span id="month-year"></span>
+      <button onclick="changeMonth(1)">Mois suivant</button>
+    </div>
+    <div id="calendar"></div>
+    <div class="reminder-box">
+      <p>Date sélectionnée : <span id="selected-date">Aucune</span></p>
+      <textarea class="note-area" id="calendar-note" placeholder="Écrire un rappel pour cette date..."></textarea>
+      <input class="time-input" type="time" id="calendar-time">
+
+      <!-- Bouton CONTINUER -->
+      <button id="startButton" onclick="startApp()">Continuer</button>
+
+      <button class="status-btn taken" onclick="saveCalendarNote()">Sauvegarder</button>
+      <p id="calendar-msg" class="save-msg">Rappel sauvegardé !</p>
+    </div>
+  </div>
+
+  <audio id="alarmSound" src="mario_theme.mp3" preload="auto"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
