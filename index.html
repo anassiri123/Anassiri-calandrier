@@ -4,65 +4,179 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calendrier Médical Senior</title>
+
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Icônes -->
+  <link rel="icon" href="logoalarm.jpg" type="image/jpg">
+  <link rel="apple-touch-icon" href="logoalarm.jpg">
+
+  <!-- Styles de base -->
+  <style>
+    :root { --primary:#1976d2; --bg:#f2f3f5; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--primary);color:#fff}
+    header h1{margin:0;font-size:20px;font-weight:700}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+    .btn-primary{background:#fff;color:var(--primary);font-weight:600}
+    .btn-primary:active{opacity:.9}
+    .hidden{display:none !important;}
+
+    /* Carte de connexion au centre */
+    #auth{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{width:100%;max-width:360px;background:#fff;border-radius:14px;padding:24px 20px;box-shadow:0 8px 22px rgba(0,0,0,.08)}
+    .card h2{margin:6px 0 14px;color:var(--primary);text-align:center}
+    .input{width:100%;padding:12px 14px;margin:8px 0;border:1px solid #e0e0e0;border-radius:10px;background:#fff}
+    .btn-fill{width:100%;background:var(--primary);color:#fff;font-weight:600;margin-top:8px}
+    .err{color:#d93025;margin-top:10px;text-align:center}
+
+    /* Modale inscription */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000}
+    .modal__content{width:92%;max-width:360px;margin:8vh auto;background:#fff;border-radius:14px;padding:20px;position:relative}
+    .modal__title{margin:0 0 10px;color:var(--primary);text-align:center}
+    .modal__close{position:absolute;right:10px;top:10px;border:0;background:transparent;font-size:22px;cursor:pointer}
+
+    /* App masquée tant qu'on n'est pas connecté */
+    #app{display:none;padding:16px}
+  </style>
 </head>
 <body>
 
-  <button id="stopButton" onclick="stopAlarm()">Arrêter l'alarme</button>
+  <!-- En-tête -->
+  <header>
+    <h1>Calendrier Médical</h1>
+    <button id="open-signup" class="btn btn-primary" type="button">Créer un compte</button>
+  </header>
 
-  <div id="custom-alert">
-    <div class="alert-box">
-      <p id="alert-message"></p>
-      <button id="closeAlertBtn">Fermer</button>
+  <!-- ====== CONNEXION ====== -->
+  <main id="auth">
+    <div class="card">
+      <h2>Connexion</h2>
+      <input id="li-email" class="input" type="email" placeholder="Email" autocomplete="email">
+      <input id="li-password" class="input" type="password" placeholder="Mot de passe" autocomplete="current-password">
+      <button id="btn-login" class="btn btn-fill" type="button">Se connecter</button>
+      <p id="auth-error" class="err"></p>
+    </div>
+  </main>
+
+  <!-- ====== MODALE - CRÉATION DE COMPTE ====== -->
+  <div id="signup-modal" class="modal" aria-hidden="true">
+    <div class="modal__content">
+      <button id="close-signup" class="modal__close" type="button" aria-label="Fermer">&times;</button>
+      <h3 class="modal__title">Créer un compte</h3>
+      <input id="su-email" class="input" type="email" placeholder="Email (nouveau compte)" autocomplete="email">
+      <input id="su-password" class="input" type="password" placeholder="Mot de passe (≥ 6 caractères)" autocomplete="new-password">
+      <button id="btn-signup" class="btn btn-fill" type="button">Créer un compte</button>
     </div>
   </div>
 
-  <h1>Mon Calendrier Médical</h1>
+  <!-- ====== APP (après connexion) ====== -->
+  <div id="app">
+    <button id="logoutButton" class="btn" type="button">Se déconnecter</button>
+    <button id="stopButton" class="btn" type="button" onclick="stopAlarm()" style="display:none">Arrêter l'alarme</button>
 
-  <div class="medication-box">
-    <div>
-      <label class="time-label">Matin :</label>
-      <button class="status-btn taken" onclick="mark('matin','Pris')">Pris</button>
-      <button class="status-btn missed" onclick="mark('matin','Oublié')">Oublié</button>
-      <p id="status-matin"></p>
+    <div id="custom-alert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:1000">
+      <div class="card" style="max-width:320px">
+        <p id="alert-message" style="margin:0 0 10px"></p>
+        <button id="closeAlertBtn" class="btn btn-fill" type="button">Fermer</button>
+      </div>
     </div>
-    <div>
-      <label class="time-label">Midi :</label>
-      <button class="status-btn taken" onclick="mark('midi','Pris')">Pris</button>
-      <button class="status-btn missed" onclick="mark('midi','Oublié')">Oublié</button>
-      <p id="status-midi"></p>
+
+    <h2 style="color:var(--primary)">Rappels médicaux</h2>
+
+    <div class="card" style="max-width:860px">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px">
+        <button type="button" class="btn" onclick="changeMonth(-1)">Mois précédent</button>
+        <strong id="month-year"></strong>
+        <button type="button" class="btn" onclick="changeMonth(1)">Mois suivant</button>
+      </div>
+
+      <div id="calendar" style="overflow:auto"></div>
+
+      <div style="margin-top:14px">
+        <p>Date sélectionnée : <strong id="selected-date">Aucune</strong></p>
+        <textarea id="calendar-note" class="input" placeholder="Écrire un rappel pour cette date..."></textarea>
+        <input id="calendar-time" class="input" type="time">
+        <button id="startButton" class="btn" type="button" onclick="startApp()">Continuer</button>
+        <button class="btn btn-fill" type="button" onclick="saveCalendarNote()">Sauvegarder</button>
+        <span id="calendar-msg" style="display:none;margin-left:8px;color:green">Rappel sauvegardé !</span>
+      </div>
     </div>
-    <div>
-      <label class="time-label">Soir :</label>
-      <button class="status-btn taken" onclick="mark('soir','Pris')">Pris</button>
-      <button class="status-btn missed" onclick="mark('soir','Oublié')">Oublié</button>
-      <p id="status-soir"></p>
-    </div>
+
+    <audio id="alarmSound" src="mario_theme.mp3" preload="auto"></audio>
   </div>
 
-  <div class="calendar-box">
-    <h2>Rappels Médicaux (Calendrier)</h2>
-    <div class="nav-buttons">
-      <button onclick="changeMonth(-1)">Mois précédent</button>
-      <span id="month-year"></span>
-      <button onclick="changeMonth(1)">Mois suivant</button>
-    </div>
-    <div id="calendar"></div>
-    <div class="reminder-box">
-      <p>Date sélectionnée : <span id="selected-date">Aucune</span></p>
-      <textarea class="note-area" id="calendar-note" placeholder="Écrire un rappel pour cette date..."></textarea>
-      <input class="time-input" type="time" id="calendar-time">
+  <!-- Ouvrir / fermer la modale d'inscription -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('signup-modal');
+      const openBtn = document.getElementById('open-signup');
+      const closeBtn = document.getElementById('close-signup');
 
-      <!-- Bouton CONTINUER -->
-      <button id="startButton" onclick="startApp()">Continuer</button>
+      openBtn.addEventListener('click', () => {
+        // si déjà connecté, ne pas ouvrir
+        if (window.auth && window.auth.currentUser) return;
+        modal.style.display = 'block';
+        modal.setAttribute('aria-hidden','false');
+      });
+      closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden','true');
+      });
+      window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+          modal.setAttribute('aria-hidden','true');
+        }
+      });
+    });
+  </script>
 
-      <button class="status-btn taken" onclick="saveCalendarNote()">Sauvegarder</button>
-      <p id="calendar-msg" class="save-msg">Rappel sauvegardé !</p>
-    </div>
-  </div>
+  <!-- ====== Firebase (expose auth & db + signal 'firebase-ready') ====== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    import { getFirestore }  from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-  <audio id="alarmSound" src="mario_theme.mp3" preload="auto"></audio>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
+      authDomain: "productvues.firebaseapp.com",
+      projectId: "productvues",
+      storageBucket: "productvues.firebasestorage.app",
+      messagingSenderId: "268641672431",
+      appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
+    };
 
-  <script src="script.js"></script>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // Expose pour scripte.js
+    window.auth = auth;
+    window.db   = db;
+    window.dispatchEvent(new Event('firebase-ready'));
+
+    // Masquer/afficher le bouton "Créer un compte" selon l'état d'auth.
+    const signupBtn = document.getElementById('open-signup');
+    const signupModal = document.getElementById('signup-modal');
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // connecté → cache le bouton et ferme la modale si ouverte
+        signupBtn.classList.add('hidden');
+        if (signupModal.style.display === 'block') {
+          signupModal.style.display = 'none';
+          signupModal.setAttribute('aria-hidden','true');
+        }
+      } else {
+        // déconnecté → montre le bouton
+        signupBtn.classList.remove('hidden');
+      }
+    });
+  </script>
+
+  <!-- Ton script applicatif -->
+  <script src="scripte.js"></script>
 </body>
 </html>
