@@ -5,13 +5,13 @@
 // utils UI
 function isLikelyEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||"").trim()); }
 function showAuth(){
-  document.getElementById('auth').style.display='flex';
-  document.getElementById('app').style.display='none';
+  const a=document.getElementById('auth'); if(a) a.style.display='flex';
+  const b=document.getElementById('app');  if(b) b.style.display='none';
   document.getElementById('open-signup')?.classList.remove('hidden');
 }
 function showApp(){
-  document.getElementById('auth').style.display='none';
-  document.getElementById('app').style.display='block';
+  const a=document.getElementById('auth'); if(a) a.style.display='none';
+  const b=document.getElementById('app');  if(b) b.style.display='block';
   document.getElementById('open-signup')?.classList.add('hidden');
 }
 function friendlyAuthError(e){
@@ -44,10 +44,12 @@ async function bootstrap(){
   // ouvrir/fermer la modale
   openSignupBtn?.addEventListener('click', ()=>{
     if (window.auth?.currentUser) return;
+    if (!signupModal) return;
     signupModal.style.display='block';
     signupModal.setAttribute('aria-hidden','false');
   });
   closeSignup?.addEventListener('click', ()=>{
+    if (!signupModal) return;
     signupModal.style.display='none';
     signupModal.setAttribute('aria-hidden','true');
   });
@@ -60,23 +62,23 @@ async function bootstrap(){
 
   // Connexion
   btnLogin?.addEventListener('click', async ()=>{
-    const email=(emailIn.value||'').trim();
-    const pass =(passIn.value||'');
-    if(!email||!pass){ errEl.textContent="Remplis l'email et le mot de passe."; return; }
-    if(!isLikelyEmail(email)){ errEl.textContent="Saisis un email valide."; return; }
-    errEl.textContent='';
+    const email=(emailIn?.value||'').trim();
+    const pass =(passIn?.value||'');
+    if(!email||!pass){ if(errEl) errEl.textContent="Remplis l'email et le mot de passe."; return; }
+    if(!isLikelyEmail(email)){ if(errEl) errEl.textContent="Saisis un email valide."; return; }
+    if(errEl) errEl.textContent='';
     try{
       const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
       await signInWithEmailAndPassword(window.auth,email,pass);
-    }catch(e){ errEl.textContent=friendlyAuthError(e); }
+    }catch(e){ if(errEl) errEl.textContent=friendlyAuthError(e); }
   });
   passIn?.addEventListener('keydown', e=>{ if(e.key==='Enter') btnLogin?.click(); });
 
   // Création de compte
   btnSignup?.addEventListener('click', async ()=>{
-    const email=(document.getElementById('su-email').value||'').trim();
-    const pass =(document.getElementById('su-password').value||'');
-    errEl.style.color=''; errEl.textContent='';
+    const email=(document.getElementById('su-email')?.value||'').trim();
+    const pass =(document.getElementById('su-password')?.value||'');
+    if(errEl){ errEl.style.color=''; errEl.textContent=''; }
     try{
       if(!isLikelyEmail(email)) throw {code:'auth/invalid-email'};
       if(!pass || pass.length<6) throw {code:'auth/weak-password'};
@@ -85,13 +87,16 @@ async function bootstrap(){
       const cred = await createUserWithEmailAndPassword(window.auth,email,pass);
       await sendEmailVerification(cred.user);
       await signOut(window.auth);
-      errEl.style.color='green';
-      errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi.";
-      // fermer la modale
-      signupModal.style.display='none';
-      signupModal.setAttribute('aria-hidden','true');
-      setTimeout(()=>{ errEl.style.color=''; }, 4000);
-    }catch(e){ errEl.style.color=''; errEl.textContent="Firebase: "+friendlyAuthError(e); }
+      if(errEl){
+        errEl.style.color='green';
+        errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi.";
+        setTimeout(()=>{ errEl.style.color=''; }, 4000);
+      }
+      if (signupModal){
+        signupModal.style.display='none';
+        signupModal.setAttribute('aria-hidden','true');
+      }
+    }catch(e){ if(errEl){ errEl.style.color=''; errEl.textContent="Firebase: "+friendlyAuthError(e); } }
   });
 
   // Déconnexion
@@ -107,7 +112,7 @@ async function bootstrap(){
       onAuthStateChanged(window.auth, async (user)=>{
         if(user){
           if(!user.emailVerified){
-            errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
+            if(errEl) errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
             try{ await signOut(window.auth); }catch{}
             showAuth();
             openSignupBtn?.classList.remove('hidden');
@@ -116,7 +121,7 @@ async function bootstrap(){
           currentUid=user.uid;
           showApp();
           openSignupBtn?.classList.add('hidden');
-          if (signupModal.style.display==='block'){
+          if (signupModal && signupModal.style.display==='block'){
             signupModal.style.display='none';
             signupModal.setAttribute('aria-hidden','true');
           }
@@ -176,7 +181,8 @@ async function initAppForUser(){
   if(!appBound){
     document.getElementById("closeAlertBtn")?.addEventListener("click",closeAlert);
     document.getElementById("calendar-time")?.addEventListener("input",()=>{
-      document.getElementById("startButton").style.display="block";
+      const sb=document.getElementById("startButton");
+      if (sb) sb.style.display="block";
     });
     appBound=true;
   }
@@ -223,49 +229,73 @@ async function selectDate(dateISO){
 
   if(currentUid){
     const r=await getReminderForUser(currentUid,dateISO);
-    document.getElementById('calendar-note').value=r?.note||'';
-    document.getElementById('calendar-time').value=r?.time||'';
+    const n=document.getElementById('calendar-note');
+    const t=document.getElementById('calendar-time');
+    if(n) n.value=r?.note||'';
+    if(t) t.value=r?.time||'';
   }else{
-    document.getElementById('calendar-note').value='';
-    document.getElementById('calendar-time').value='';
+    const n=document.getElementById('calendar-note');
+    const t=document.getElementById('calendar-time');
+    if(n) n.value='';
+    if(t) t.value='';
   }
-  document.getElementById("startButton").style.display="block";
+  const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
 }
 
 async function saveCalendarNote(){
   if(!selectedDate) return alert('Veuillez sélectionner une date.');
   if(!currentUid)  return alert('Veuillez vous connecter.');
 
-  const note=document.getElementById('calendar-note').value.trim();
-  const time=document.getElementById('calendar-time').value.trim();
+  const note=(document.getElementById('calendar-note')?.value||'').trim();
+
+  // Lecture fiable de l’heure (mobile)
+  const timeEl=document.getElementById('calendar-time');
+  let time=(timeEl?.value||'').trim();
+  if(!time && timeEl?.getAttribute('value')) time=timeEl.getAttribute('value').trim();
+
   const msg=document.getElementById('calendar-msg');
 
   if(!time){
-    msg.style.display='inline'; msg.style.color='red';
-    msg.textContent="Choisis une heure avant d'enregistrer.";
-    setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 2000);
+    if(msg){
+      msg.style.display='inline'; msg.style.color='red';
+      msg.textContent="Choisis une heure avant d'enregistrer.";
+      setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 2000);
+    }
     return;
   }
 
+  // Débloque l’audio si besoin
   if(!audioEnabled) startApp();
 
   await saveReminderForUser(currentUid,selectedDate,note,time);
-  msg.style.display='inline'; msg.style.color='green';
-  msg.textContent='Rappel sauvegardé !';
-  setTimeout(()=>{ msg.style.display='none'; }, 2000);
+  if(msg){
+    msg.style.display='inline'; msg.style.color='green';
+    msg.textContent='Rappel sauvegardé !';
+    setTimeout(()=>{ msg.style.display='none'; }, 2000);
+  }
 }
 
 async function checkRemindersFirestore(){
-  if(!currentUid||!audioEnabled||alarmTriggeredToday) return;
+  if(!currentUid || !audioEnabled) return;
+
   const now=new Date();
   const dateStr=now.toISOString().split('T')[0];
   const timeStr=now.toTimeString().slice(0,5);
+
+  // reset quotidien
+  if(window._lastDate !== dateStr){
+    window._lastDate = dateStr;
+    alarmTriggeredToday = false;
+  }
+  if(alarmTriggeredToday) return;
+
   const r=await getReminderForUser(currentUid,dateStr);
   if(r && r.time===timeStr){               // sonne même si note vide
     alarmTriggeredToday=true;
     const sound=document.getElementById('alarmSound');
     sound.play().catch(()=>{});
-    document.getElementById('stopButton').style.display='block';
+    const stopBtn=document.getElementById('stopButton');
+    if(stopBtn) stopBtn.style.display='block';
     showAlert(r.note ? ('Rappel : '+r.note) : 'Rappel');
     if(navigator.vibrate) navigator.vibrate(500);
   }
@@ -273,11 +303,13 @@ async function checkRemindersFirestore(){
 
 function stopAlarm(){
   const sound=document.getElementById('alarmSound');
-  sound.pause(); sound.currentTime=0; closeAlert();
-  document.getElementById('stopButton').style.display='none';
+  if(sound){ sound.pause(); sound.currentTime=0; }
+  closeAlert();
+  const stopBtn=document.getElementById('stopButton');
+  if(stopBtn) stopBtn.style.display='none';
 }
 function showAlert(message){
-  document.getElementById('alert-message').innerText=message;
-  document.getElementById('custom-alert').style.display='flex';
+  const m=document.getElementById('alert-message'); if(m) m.innerText=message;
+  const o=document.getElementById('custom-alert'); if(o) o.style.display='flex';
 }
-function closeAlert(){ document.getElementById('custom-alert').style.display='none'; }
+function closeAlert(){ const o=document.getElementById('custom-alert'); if(o) o.style.display='none'; }
