@@ -91,3 +91,8 @@ p[id^="status-"] { font-weight: bold; font-size: 16px; margin: 5px 0; }
 
 /* cache proprement un élément */
 .hidden { display: none !important; }
+
+#calendar td.selected {
+  outline: 2px solid #1976d2;
+  background: #eaf3ff;
+}
