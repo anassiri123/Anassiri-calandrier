@@ -184,6 +184,12 @@ async function initAppForUser(){
       const sb=document.getElementById("startButton");
       if (sb) sb.style.display="block";
     });
+    // réinitialiser l’alarme chaque jour
+    setInterval(()=>{
+      const now = new Date();
+      const ds = now.toISOString().split('T')[0];
+      if (window._lastDate !== ds){ window._lastDate = ds; alarmTriggeredToday = false; }
+    }, 60*1000);
     appBound=true;
   }
 }
