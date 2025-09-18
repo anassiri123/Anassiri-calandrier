@@ -10,14 +10,12 @@ function isLikelyEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v|
 function showAuth(){
   const a=document.getElementById('auth'); if(a)a.style.display='flex';
   const b=document.getElementById('app');  if(b)b.style.display='none';
-  // montre le bouton "Créer un compte" si défini dans index.html
   const openBtn = document.getElementById('open-signup');
   openBtn?.classList.remove('hidden');
 }
 function showApp(){
   const a=document.getElementById('auth'); if(a)a.style.display='none';
   const b=document.getElementById('app');  if(b)b.style.display='block';
-  // cache le bouton "Créer un compte" si défini dans index.html
   const openBtn = document.getElementById('open-signup');
   openBtn?.classList.add('hidden');
 }
@@ -85,7 +83,6 @@ async function bootstrap(){
       await signOut(window.auth);
       errEl.style.color='green';
       errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi.";
-      // ferme la modale si elle existe
       const modal = document.getElementById('signup-modal');
       if(modal){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
     }catch(e){ errEl.style.color=''; errEl.textContent="Firebase: "+friendlyAuthError(e); }
@@ -111,7 +108,7 @@ async function bootstrap(){
           }
           currentUid=user.uid;
           showApp();
-          await initAppForUser(user.uid); // ➜ construit le calendrier & auto-sélectionne aujourd’hui
+          await initAppForUser(user.uid);
         }else{
           currentUid=null; showAuth();
         }
@@ -130,7 +127,7 @@ async function saveReminderForUser(uid,dateISO,note,time){
   const { doc,setDoc,serverTimestamp } =
     await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
   const ref=doc(window.db,"users",uid,"reminders",dateISO);
-  await setDoc(ref,{note:note||"",time:time||"",updatedAt:serverTimestamp()},{merge:true});
+  return setDoc(ref,{note:note||"",time:time||"",updatedAt:serverTimestamp()},{merge:true});
 }
 async function getReminderForUser(uid,dateISO){
   const { doc,getDoc } =
@@ -168,7 +165,7 @@ async function initAppForUser(uid){
   if(!appBound){
     document.getElementById("closeAlertBtn")?.addEventListener("click",closeAlert);
 
-    // afficher "Continuer" dès qu'une heure est saisie
+    // Afficher “Continuer” dès qu’une heure est saisie
     document.getElementById("calendar-time")?.addEventListener("input",()=>{
       const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
     });
@@ -215,7 +212,6 @@ function changeMonth(offset){
   if(currentMonth<0){ currentMonth=11; currentYear--; }
   else if(currentMonth>11){ currentMonth=0; currentYear++; }
   generateCalendar(currentMonth,currentYear);
-  // re-surligne la date sélectionnée si elle existe encore dans le mois
   if(selectedDate) highlightCell(selectedDate);
 }
 
@@ -223,10 +219,8 @@ async function selectDate(date){
   selectedDate=date;
   const sel = document.getElementById('selected-date'); if(sel) sel.innerText=date;
 
-  // 🔹 Surbrillance visuelle
+  // Surbrillance + bouton Continuer
   highlightCell(date);
-
-  // 🔹 Montre “Continuer”
   const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
 
   if(currentUid){
@@ -262,13 +256,25 @@ async function saveCalendarNote(){
     return;
   }
 
-  await saveReminderForUser(currentUid,selectedDate,note,time);
-
-  if(msg){
-    msg.style.display='inline';
-    msg.style.color='green';
-    msg.textContent='Rappel sauvegardé !';
-    setTimeout(()=>{ msg.style.display='none'; }, 2000);
+  try{
+    console.log('[save] uid=', currentUid, 'date=', selectedDate, 'time=', time, 'note=', note);
+    await saveReminderForUser(currentUid,selectedDate,note,time);
+    if(msg){
+      msg.style.display='inline';
+      msg.style.color='green';
+      msg.textContent='Rappel sauvegardé !';
+      setTimeout(()=>{ msg.style.display='none'; }, 2000);
+    }
+  }catch(e){
+    console.error('Erreur Firestore saveReminderForUser:', e);
+    if(msg){
+      msg.style.display='inline';
+      msg.style.color='red';
+      msg.textContent="Erreur d’enregistrement: "+(e.message||'inconnue');
+      setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 3000);
+    }else{
+      alert("Erreur d’enregistrement: "+(e.message||'inconnue'));
+    }
   }
 }
 
@@ -300,6 +306,6 @@ function showAlert(message){
 function closeAlert(){ const o=document.getElementById('custom-alert'); if(o) o.style.display='none'; }
 
 /* =========================
-   Styles requis pour la surbrillance (à mettre dans style.css si pas déjà)
+   CSS conseillé pour la surbrillance (dans style.css)
    #calendar td.selected { outline: 2px solid #1976d2; background: #eaf3ff; }
 ========================= */
