@@ -5,10 +5,22 @@
    - rappels Firestore: users/{uid}/reminders/{dateISO}
 ========================= */
 
-// ---- utils UI
+/* ---------- Utilitaires UI ---------- */
 function isLikelyEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||"").trim()); }
-function showAuth(){ const a=document.getElementById('auth'); if(a)a.style.display='flex'; const b=document.getElementById('app'); if(b)b.style.display='none'; }
-function showApp(){ const a=document.getElementById('auth'); if(a)a.style.display='none'; const b=document.getElementById('app'); if(b)b.style.display='block'; }
+function showAuth(){
+  const a=document.getElementById('auth'); if(a)a.style.display='flex';
+  const b=document.getElementById('app');  if(b)b.style.display='none';
+  // montre le bouton "Créer un compte" si défini dans index.html
+  const openBtn = document.getElementById('open-signup');
+  openBtn?.classList.remove('hidden');
+}
+function showApp(){
+  const a=document.getElementById('auth'); if(a)a.style.display='none';
+  const b=document.getElementById('app');  if(b)b.style.display='block';
+  // cache le bouton "Créer un compte" si défini dans index.html
+  const openBtn = document.getElementById('open-signup');
+  openBtn?.classList.add('hidden');
+}
 function friendlyAuthError(e){
   const c=(e&&e.code)||'';
   if(c.includes('invalid-email')) return "Email invalide.";
@@ -21,63 +33,48 @@ function friendlyAuthError(e){
   return e.message||"Erreur inconnue.";
 }
 
-/* =========================
-   Bootstrap quand Firebase est prêt
-========================= */
+/* ---------- Bootstrap quand Firebase est prêt ---------- */
 async function bootstrap(){
   if(!window.auth || !window.db) return; // sécurité
 
-  // --- références DOM
-  const errEl     = document.getElementById('auth-error');
-  const btnLogin  = document.getElementById('btn-login');
-  const btnSignup = document.getElementById('btn-signup');
-  const btnLogout = document.getElementById('logoutButton');
-  const emailIn   = document.getElementById('li-email');
-  const passIn    = document.getElementById('li-password');
+  const errEl      = document.getElementById('auth-error');
+  const btnLogin   = document.getElementById('btn-login');
+  const btnSignup  = document.getElementById('btn-signup');
+  const btnLogout  = document.getElementById('logoutButton');
+  const emailIn    = document.getElementById('li-email');
+  const passIn     = document.getElementById('li-password');
+  const suEmailIn  = document.getElementById('su-email');
+  const suPassIn   = document.getElementById('su-password');
 
-  // Modale / bouton "Créer un compte"
-  const openSignupBtn = document.getElementById('open-signup');
-  const signupModal   = document.getElementById('signup-modal');
-  const closeSignup   = document.getElementById('close-signup');
+  const setBusy = (el, busy, txtIdle, txtBusy) => {
+    if(!el) return;
+    if(txtIdle && !el.dataset._idle) el.dataset._idle = txtIdle;
+    el.disabled = !!busy;
+    el.textContent = busy ? (txtBusy||el.textContent) : (el.dataset._idle||el.textContent);
+  };
 
-  // -- Ouverture/fermeture modale côté JS (utile si le HTML ne le fait pas)
-  openSignupBtn?.addEventListener('click', () => {
-    if (window.auth?.currentUser) return;           // déjà connecté → ne rien faire
-    if (!signupModal) return;
-    signupModal.style.display = 'block';
-    signupModal.setAttribute('aria-hidden','false');
-  });
-  closeSignup?.addEventListener('click', () => {
-    if (!signupModal) return;
-    signupModal.style.display = 'none';
-    signupModal.setAttribute('aria-hidden','true');
-  });
-  window.addEventListener('click', (e) => {
-    if (e.target === signupModal) {
-      signupModal.style.display = 'none';
-      signupModal.setAttribute('aria-hidden','true');
-    }
-  });
-
-  // --- Connexion
+  /* ---- Connexion ---- */
   btnLogin?.addEventListener('click', async () => {
     const email=(emailIn?.value||'').trim();
     const pass =(passIn?.value||'');
     if(!email||!pass){ errEl.textContent="Remplis l'email et le mot de passe."; return; }
     if(!isLikelyEmail(email)){ errEl.textContent="Saisis un email valide (ex. nom@domaine.com)."; return; }
     errEl.textContent='';
+    setBusy(btnLogin,true,"Se connecter","Connexion…");
     try{
       const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
       await signInWithEmailAndPassword(window.auth,email,pass);
     }catch(e){ errEl.textContent=friendlyAuthError(e); }
+    finally{ setBusy(btnLogin,false,"Se connecter"); }
   });
   passIn?.addEventListener('keydown', e=>{ if(e.key==='Enter') btnLogin?.click(); });
 
-  // --- Création de compte (avec vérification email)
+  /* ---- Création de compte ---- */
   btnSignup?.addEventListener('click', async ()=>{
-    const email=(document.getElementById('su-email')?.value||'').trim();
-    const pass =(document.getElementById('su-password')?.value||'');
-    errEl.textContent='';
+    const email=(suEmailIn?.value||'').trim();
+    const pass =(suPassIn?.value||'');
+    errEl.style.color=''; errEl.textContent='';
+    setBusy(btnSignup,true,"Créer un compte","Création…");
     try{
       if(!isLikelyEmail(email)) throw {code:'auth/invalid-email'};
       if(!pass || pass.length<6) throw {code:'auth/weak-password'};
@@ -88,52 +85,41 @@ async function bootstrap(){
       await signOut(window.auth);
       errEl.style.color='green';
       errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi.";
-      setTimeout(()=>{ errEl.style.color=''; }, 4000);
+      // ferme la modale si elle existe
+      const modal = document.getElementById('signup-modal');
+      if(modal){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
     }catch(e){ errEl.style.color=''; errEl.textContent="Firebase: "+friendlyAuthError(e); }
+    finally{ setBusy(btnSignup,false,"Créer un compte"); }
   });
 
-  // --- Déconnexion
+  /* ---- Déconnexion ---- */
   btnLogout?.addEventListener('click', ()=>{
     import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js")
       .then(({signOut})=>signOut(window.auth))
       .catch(console.error);
   });
 
-  // --- État d’auth
+  /* ---- État d'auth ---- */
   import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js")
     .then(({ onAuthStateChanged, signOut })=>{
       onAuthStateChanged(window.auth, async (user)=>{
         if(user){
-          // email non vérifié → refuse l'accès
           if(!user.emailVerified){
-            errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
             try{ await signOut(window.auth); }catch{}
-            showAuth(); 
-            // réafficher le bouton “Créer un compte” côté UI de login
-            openSignupBtn?.classList.remove('hidden');
-            return;
+            errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
+            showAuth(); return;
           }
-          // connecté et vérifié → affiche l’app
           currentUid=user.uid;
           showApp();
-          // cache le bouton d’inscription + ferme la modale si ouverte
-          openSignupBtn?.classList.add('hidden');
-          if (signupModal && signupModal.style.display === 'block') {
-            signupModal.style.display = 'none';
-            signupModal.setAttribute('aria-hidden','true');
-          }
-          await initAppForUser(user.uid);
+          await initAppForUser(user.uid); // ➜ construit le calendrier & auto-sélectionne aujourd’hui
         }else{
-          // déconnecté → affiche la page d’auth et le bouton d’inscription
-          currentUid=null; 
-          showAuth();
-          openSignupBtn?.classList.remove('hidden');
+          currentUid=null; showAuth();
         }
       });
     });
 }
 
-// Lance tout de suite si prêt, sinon attend le signal du HTML
+/* Lance bootstrap au bon moment */
 if(window.auth && window.db){ bootstrap(); }
 else{ window.addEventListener('firebase-ready', bootstrap, { once:true }); }
 
@@ -170,15 +156,32 @@ function startApp(){
 
 async function initAppForUser(uid){
   generateCalendar(currentMonth,currentYear);
+
+  // 🔹 Auto-sélectionne la date d’aujourd’hui
+  const now = new Date();
+  const todayISO = now.toISOString().split('T')[0];
+  await selectDate(todayISO);
+
   if(reminderTimerId) clearInterval(reminderTimerId);
   reminderTimerId=setInterval(checkRemindersFirestore,1000);
+
   if(!appBound){
     document.getElementById("closeAlertBtn")?.addEventListener("click",closeAlert);
+
+    // afficher "Continuer" dès qu'une heure est saisie
     document.getElementById("calendar-time")?.addEventListener("input",()=>{
       const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
     });
     appBound=true;
   }
+}
+
+/* ---- Surbrillance de la cellule sélectionnée ---- */
+function highlightCell(dateISO){
+  document.querySelectorAll('#calendar td.selected').forEach(td => td.classList.remove('selected'));
+  const cell = Array.from(document.querySelectorAll('#calendar td'))
+    .find(td => td.getAttribute('onclick')?.includes(dateISO));
+  if(cell) cell.classList.add('selected');
 }
 
 function mark(time,status){
@@ -201,9 +204,10 @@ function generateCalendar(month,year){
     if((day+firstDay)%7===0) html+='</tr><tr>';
   }
   html+='</tr></table>';
-  document.getElementById('calendar').innerHTML=html;
-  document.getElementById('month-year').innerText=
-    new Date(year,month).toLocaleString('fr-FR',{month:'long'})+' '+year;
+  const calEl = document.getElementById('calendar');
+  if(calEl) calEl.innerHTML=html;
+  const label = document.getElementById('month-year');
+  if(label) label.innerText= new Date(year,month).toLocaleString('fr-FR',{month:'long'})+' '+year;
 }
 
 function changeMonth(offset){
@@ -211,29 +215,61 @@ function changeMonth(offset){
   if(currentMonth<0){ currentMonth=11; currentYear--; }
   else if(currentMonth>11){ currentMonth=0; currentYear++; }
   generateCalendar(currentMonth,currentYear);
+  // re-surligne la date sélectionnée si elle existe encore dans le mois
+  if(selectedDate) highlightCell(selectedDate);
 }
 
 async function selectDate(date){
   selectedDate=date;
-  document.getElementById('selected-date').innerText=date;
+  const sel = document.getElementById('selected-date'); if(sel) sel.innerText=date;
+
+  // 🔹 Surbrillance visuelle
+  highlightCell(date);
+
+  // 🔹 Montre “Continuer”
+  const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
+
   if(currentUid){
     const r=await getReminderForUser(currentUid,date);
-    document.getElementById('calendar-note').value=r?.note||'';
-    document.getElementById('calendar-time').value=r?.time||'';
+    const noteEl = document.getElementById('calendar-note');
+    const timeEl = document.getElementById('calendar-time');
+    if(noteEl) noteEl.value=r?.note||'';
+    if(timeEl) timeEl.value=r?.time||'';
   }else{
-    document.getElementById('calendar-note').value='';
-    document.getElementById('calendar-time').value='';
+    const noteEl = document.getElementById('calendar-note');
+    const timeEl = document.getElementById('calendar-time');
+    if(noteEl) noteEl.value='';
+    if(timeEl) timeEl.value='';
   }
 }
 
 async function saveCalendarNote(){
-  if(!selectedDate) return alert('Veuillez sélectionner une date.');
-  if(!currentUid)  return alert('Veuillez vous connecter.');
-  const note=document.getElementById('calendar-note').value;
-  const time=document.getElementById('calendar-time').value;
-  await saveReminderForUser(currentUid,selectedDate,note,time);
   const msg=document.getElementById('calendar-msg');
-  if(msg){ msg.style.display='inline'; setTimeout(()=>msg.style.display='none',2000); }
+
+  if(!currentUid){ alert('Veuillez vous connecter.'); return; }
+  if(!selectedDate){ alert('Veuillez sélectionner une date.'); return; }
+
+  const note=(document.getElementById('calendar-note')?.value||'').trim();
+  const time=(document.getElementById('calendar-time')?.value||'').trim();
+
+  if(!time){
+    if(msg){
+      msg.style.display='inline';
+      msg.style.color='red';
+      msg.textContent="Choisis une heure avant d'enregistrer.";
+      setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 2000);
+    }
+    return;
+  }
+
+  await saveReminderForUser(currentUid,selectedDate,note,time);
+
+  if(msg){
+    msg.style.display='inline';
+    msg.style.color='green';
+    msg.textContent='Rappel sauvegardé !';
+    setTimeout(()=>{ msg.style.display='none'; }, 2000);
+  }
 }
 
 async function checkRemindersFirestore(){
@@ -246,7 +282,7 @@ async function checkRemindersFirestore(){
     alarmTriggeredToday=true;
     const sound=document.getElementById('alarmSound');
     sound.play().catch(()=>{});
-    document.getElementById('stopButton').style.display='block';
+    const stopBtn = document.getElementById('stopButton'); if(stopBtn) stopBtn.style.display='block';
     showAlert('Rappel : '+r.note);
     if(navigator.vibrate) navigator.vibrate(500);
   }
@@ -255,10 +291,15 @@ async function checkRemindersFirestore(){
 function stopAlarm(){
   const sound=document.getElementById('alarmSound');
   sound.pause(); sound.currentTime=0; closeAlert();
-  document.getElementById('stopButton').style.display='none';
+  const stopBtn=document.getElementById('stopButton'); if(stopBtn) stopBtn.style.display='none';
 }
 function showAlert(message){
-  document.getElementById('alert-message').innerText=message;
-  document.getElementById('custom-alert').style.display='flex';
+  const m=document.getElementById('alert-message'); if(m) m.innerText=message;
+  const o=document.getElementById('custom-alert'); if(o) o.style.display='flex';
 }
-function closeAlert(){ document.getElementById('custom-alert').style.display='none'; }
+function closeAlert(){ const o=document.getElementById('custom-alert'); if(o) o.style.display='none'; }
+
+/* =========================
+   Styles requis pour la surbrillance (à mettre dans style.css si pas déjà)
+   #calendar td.selected { outline: 2px solid #1976d2; background: #eaf3ff; }
+========================= */
