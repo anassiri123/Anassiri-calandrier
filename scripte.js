@@ -102,6 +102,7 @@ async function bootstrap(){
           currentUid=user.uid;
           showApp();
           await initAppForUser(user.uid);
+          await ensureMessaging(); // <-- AJOUT : init des notifications push
         }else{
           currentUid=null; showAuth();
         }
@@ -214,7 +215,7 @@ async function selectDate(date){
 
   if(currentUid){
     const r=await getReminderForUser(currentUid,date);
-    document.getElementById('calendar-note').value=r?.note||'';
+    document.getElementById('calendar-note').value=r?.note||';
     document.getElementById('calendar-time').value=r?.time||'';
   }else{
     document.getElementById('calendar-note').value='';
@@ -294,3 +295,49 @@ function showAlert(message){
   document.getElementById('custom-alert').style.display='flex';
 }
 function closeAlert(){ document.getElementById('custom-alert').style.display='none'; }
+
+/* ----------------------------------------------------
+   Notifications push (Firebase Cloud Messaging - Web)
+   (ajout minimal + VAPID KEY publique)
+---------------------------------------------------- */
+let _messagingReady = false;
+
+async function ensureMessaging(){
+  if (_messagingReady) return;
+  try{
+    // Demande la permission
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted'){
+      console.warn('Notifications refusées par l’utilisateur.');
+      return;
+    }
+
+    // Import dynamique du SDK Messaging
+    const { getMessaging, getToken, onMessage } =
+      await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js");
+    const messaging = getMessaging();
+
+    // Ta clé publique VAPID
+    const vapidKey = "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0";
+
+    // Récupérer le token
+    const token = await getToken(messaging, { vapidKey });
+    if (token){
+      console.log('[FCM] Token web :', token);
+    }else{
+      console.warn('[FCM] Aucun token généré');
+    }
+
+    // Message reçu quand l’app est ouverte
+    onMessage(messaging, (payload)=>{
+      console.log('[FCM] Message reçu (foreground):', payload);
+      try{
+        showAlert(payload?.notification?.title || 'Notification reçue');
+      }catch(e){}
+    });
+
+    _messagingReady = true;
+  }catch(err){
+    console.error('[FCM] Erreur init messaging :', err);
+  }
+}
