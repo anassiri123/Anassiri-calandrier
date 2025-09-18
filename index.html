@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calendrier Médical Senior</title>
@@ -10,15 +9,15 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1976d2">
 
-<!-- iOS (ouvrir en plein écran après "Sur l'écran d'accueil") -->
+  <!-- iOS (ouvrir en plein écran après "Sur l'écran d'accueil") -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="logoalarm-192.png">
-  <!-- Icônes -->
-  <link rel="icon" href="logoalarm.jpg" type="image/jpg">
-  <link rel="apple-touch-icon" href="logoalarm.jpg">
 
-  <!-- Styles de base -->
+  <!-- Icônes navigateur (facultatif) -->
+  <link rel="icon" href="logoalarm-192.png" type="image/png">
+
+  <!-- Styles de base (rapides) -->
   <style>
     :root { --primary:#1976d2; --bg:#f2f3f5; }
     *{box-sizing:border-box}
@@ -46,6 +45,9 @@
 
     /* App masquée tant qu'on n'est pas connecté */
     #app{display:none;padding:16px}
+
+    /* Surbrillance jour choisi */
+    #calendar td.selected{outline:2px solid #1976d2;background:#eaf3ff}
   </style>
 </head>
 <body>
@@ -104,7 +106,10 @@
       <div style="margin-top:14px">
         <p>Date sélectionnée : <strong id="selected-date">Aucune</strong></p>
         <textarea id="calendar-note" class="input" placeholder="Écrire un rappel pour cette date..."></textarea>
-        <input id="calendar-time" class="input" type="time">
+
+        <!-- step=60 = minutes entières, aide certains mobiles -->
+        <input id="calendar-time" class="input" type="time" step="60">
+
         <button id="startButton" class="btn" type="button" onclick="startApp()">Continuer</button>
         <button class="btn btn-fill" type="button" onclick="saveCalendarNote()">Sauvegarder</button>
         <span id="calendar-msg" style="display:none;margin-left:8px;color:green">Rappel sauvegardé !</span>
@@ -122,7 +127,6 @@
       const closeBtn = document.getElementById('close-signup');
 
       openBtn.addEventListener('click', () => {
-        // si déjà connecté, ne pas ouvrir
         if (window.auth && window.auth.currentUser) return;
         modal.style.display = 'block';
         modal.setAttribute('aria-hidden','false');
@@ -159,31 +163,27 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // Expose pour scripte.js
     window.auth = auth;
     window.db   = db;
     window.dispatchEvent(new Event('firebase-ready'));
 
-    // Masquer/afficher le bouton "Créer un compte" selon l'état d'auth.
     const signupBtn = document.getElementById('open-signup');
     const signupModal = document.getElementById('signup-modal');
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // connecté → cache le bouton et ferme la modale si ouverte
         signupBtn.classList.add('hidden');
         if (signupModal.style.display === 'block') {
           signupModal.style.display = 'none';
           signupModal.setAttribute('aria-hidden','true');
         }
       } else {
-        // déconnecté → montre le bouton
         signupBtn.classList.remove('hidden');
       }
     });
   </script>
 
-  <!-- Ton script applicatif -->
+  <!-- Script applicatif -->
   <script src="scripte.js"></script>
 </body>
 </html>
