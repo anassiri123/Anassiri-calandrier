@@ -1,23 +1,17 @@
 /* =========================
    AUTH + FIRESTORE (Firebase)
-   - signup avec email de vérification
-   - login bloqué si email non vérifié
-   - rappels Firestore: users/{uid}/reminders/{dateISO}
 ========================= */
 
-/* ---------- Utilitaires UI ---------- */
 function isLikelyEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||"").trim()); }
 function showAuth(){
   const a=document.getElementById('auth'); if(a)a.style.display='flex';
   const b=document.getElementById('app');  if(b)b.style.display='none';
-  const openBtn = document.getElementById('open-signup');
-  openBtn?.classList.remove('hidden');
+  document.getElementById('open-signup')?.classList.remove('hidden');
 }
 function showApp(){
   const a=document.getElementById('auth'); if(a)a.style.display='none';
   const b=document.getElementById('app');  if(b)b.style.display='block';
-  const openBtn = document.getElementById('open-signup');
-  openBtn?.classList.add('hidden');
+  document.getElementById('open-signup')?.classList.add('hidden');
 }
 function friendlyAuthError(e){
   const c=(e&&e.code)||'';
@@ -31,9 +25,8 @@ function friendlyAuthError(e){
   return e.message||"Erreur inconnue.";
 }
 
-/* ---------- Bootstrap quand Firebase est prêt ---------- */
 async function bootstrap(){
-  if(!window.auth || !window.db) return; // sécurité
+  if(!window.auth || !window.db) return;
 
   const errEl      = document.getElementById('auth-error');
   const btnLogin   = document.getElementById('btn-login');
@@ -51,7 +44,7 @@ async function bootstrap(){
     el.textContent = busy ? (txtBusy||el.textContent) : (el.dataset._idle||el.textContent);
   };
 
-  /* ---- Connexion ---- */
+  // Connexion
   btnLogin?.addEventListener('click', async () => {
     const email=(emailIn?.value||'').trim();
     const pass =(passIn?.value||'');
@@ -67,7 +60,7 @@ async function bootstrap(){
   });
   passIn?.addEventListener('keydown', e=>{ if(e.key==='Enter') btnLogin?.click(); });
 
-  /* ---- Création de compte ---- */
+  // Création de compte
   btnSignup?.addEventListener('click', async ()=>{
     const email=(suEmailIn?.value||'').trim();
     const pass =(suPassIn?.value||'');
@@ -89,14 +82,14 @@ async function bootstrap(){
     finally{ setBusy(btnSignup,false,"Créer un compte"); }
   });
 
-  /* ---- Déconnexion ---- */
+  // Déconnexion
   btnLogout?.addEventListener('click', ()=>{
     import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js")
       .then(({signOut})=>signOut(window.auth))
       .catch(console.error);
   });
 
-  /* ---- État d'auth ---- */
+  // État d'auth
   import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js")
     .then(({ onAuthStateChanged, signOut })=>{
       onAuthStateChanged(window.auth, async (user)=>{
@@ -116,7 +109,6 @@ async function bootstrap(){
     });
 }
 
-/* Lance bootstrap au bon moment */
 if(window.auth && window.db){ bootstrap(); }
 else{ window.addEventListener('firebase-ready', bootstrap, { once:true }); }
 
@@ -148,13 +140,13 @@ function startApp(){
   const btn=document.getElementById('startButton'); if(btn) btn.style.display='none';
   const sound=document.getElementById('alarmSound');
   sound.play().then(()=>{ sound.pause(); sound.currentTime=0; })
-    .catch(()=>alert("Le son est bloqué. Appuie à nouveau si nécessaire."));
+    .catch(()=>{/* OK, on réessaiera au déclenchement */});
 }
 
 async function initAppForUser(uid){
   generateCalendar(currentMonth,currentYear);
 
-  // 🔹 Auto-sélectionne la date d’aujourd’hui
+  // Auto-sélectionne aujourd’hui
   const now = new Date();
   const todayISO = now.toISOString().split('T')[0];
   await selectDate(todayISO);
@@ -166,25 +158,24 @@ async function initAppForUser(uid){
     document.getElementById("closeAlertBtn")?.addEventListener("click",closeAlert);
 
     // Afficher “Continuer” dès qu’une heure est saisie
-    document.getElementById("calendar-time")?.addEventListener("input",()=>{
+    const timeEl = document.getElementById("calendar-time");
+    timeEl?.addEventListener("input",()=>{
       const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
     });
+    timeEl?.addEventListener("change",()=>{
+      const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
+    });
+
     appBound=true;
   }
 }
 
-/* ---- Surbrillance de la cellule sélectionnée ---- */
+/* Surbrillance cellule */
 function highlightCell(dateISO){
   document.querySelectorAll('#calendar td.selected').forEach(td => td.classList.remove('selected'));
   const cell = Array.from(document.querySelectorAll('#calendar td'))
     .find(td => td.getAttribute('onclick')?.includes(dateISO));
   if(cell) cell.classList.add('selected');
-}
-
-function mark(time,status){
-  localStorage.setItem(time,status);
-  const el=document.getElementById('status-'+time);
-  if(el) el.innerText="Statut : "+status;
 }
 
 function generateCalendar(month,year){
@@ -201,10 +192,9 @@ function generateCalendar(month,year){
     if((day+firstDay)%7===0) html+='</tr><tr>';
   }
   html+='</tr></table>';
-  const calEl = document.getElementById('calendar');
-  if(calEl) calEl.innerHTML=html;
-  const label = document.getElementById('month-year');
-  if(label) label.innerText= new Date(year,month).toLocaleString('fr-FR',{month:'long'})+' '+year;
+  document.getElementById('calendar').innerHTML=html;
+  document.getElementById('month-year').innerText=
+    new Date(year,month).toLocaleString('fr-FR',{month:'long'})+' '+year;
 }
 
 function changeMonth(offset){
@@ -217,59 +207,57 @@ function changeMonth(offset){
 
 async function selectDate(date){
   selectedDate=date;
-  const sel = document.getElementById('selected-date'); if(sel) sel.innerText=date;
+  document.getElementById('selected-date').innerText=date;
 
-  // Surbrillance + bouton Continuer
   highlightCell(date);
   const sb=document.getElementById("startButton"); if(sb) sb.style.display="block";
 
   if(currentUid){
     const r=await getReminderForUser(currentUid,date);
-    const noteEl = document.getElementById('calendar-note');
-    const timeEl = document.getElementById('calendar-time');
-    if(noteEl) noteEl.value=r?.note||'';
-    if(timeEl) timeEl.value=r?.time||'';
+    document.getElementById('calendar-note').value=r?.note||'';
+    document.getElementById('calendar-time').value=r?.time||'';
   }else{
-    const noteEl = document.getElementById('calendar-note');
-    const timeEl = document.getElementById('calendar-time');
-    if(noteEl) noteEl.value='';
-    if(timeEl) timeEl.value='';
+    document.getElementById('calendar-note').value='';
+    document.getElementById('calendar-time').value='';
   }
 }
 
 async function saveCalendarNote(){
   const msg=document.getElementById('calendar-msg');
-
   if(!currentUid){ alert('Veuillez vous connecter.'); return; }
   if(!selectedDate){ alert('Veuillez sélectionner une date.'); return; }
 
   const note=(document.getElementById('calendar-note')?.value||'').trim();
-  const time=(document.getElementById('calendar-time')?.value||'').trim();
+  const timeEl=document.getElementById('calendar-time');
+
+  // Récupération robuste de l’heure sur mobile
+  let time=(timeEl?.value||'').trim();
+  if(!time && timeEl?.getAttribute('value')) time=timeEl.getAttribute('value').trim();
 
   if(!time){
     if(msg){
-      msg.style.display='inline';
-      msg.style.color='red';
+      msg.style.display='inline'; msg.style.color='red';
       msg.textContent="Choisis une heure avant d'enregistrer.";
       setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 2000);
     }
     return;
   }
 
+  // Déverrouille l’audio si l’utilisateur a oublié d’appuyer sur “Continuer”
+  if(!audioEnabled){ startApp(); }
+
   try{
     console.log('[save] uid=', currentUid, 'date=', selectedDate, 'time=', time, 'note=', note);
     await saveReminderForUser(currentUid,selectedDate,note,time);
     if(msg){
-      msg.style.display='inline';
-      msg.style.color='green';
+      msg.style.display='inline'; msg.style.color='green';
       msg.textContent='Rappel sauvegardé !';
       setTimeout(()=>{ msg.style.display='none'; }, 2000);
     }
   }catch(e){
     console.error('Erreur Firestore saveReminderForUser:', e);
     if(msg){
-      msg.style.display='inline';
-      msg.style.color='red';
+      msg.style.display='inline'; msg.style.color='red';
       msg.textContent="Erreur d’enregistrement: "+(e.message||'inconnue');
       setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 3000);
     }else{
@@ -284,12 +272,14 @@ async function checkRemindersFirestore(){
   const dateStr=now.toISOString().split('T')[0];
   const timeStr=now.toTimeString().slice(0,5);
   const r=await getReminderForUser(currentUid,dateStr);
-  if(r&&r.time===timeStr&&r.note){
+
+  // Sonner même si la note est vide
+  if(r && r.time===timeStr){
     alarmTriggeredToday=true;
     const sound=document.getElementById('alarmSound');
     sound.play().catch(()=>{});
-    const stopBtn = document.getElementById('stopButton'); if(stopBtn) stopBtn.style.display='block';
-    showAlert('Rappel : '+r.note);
+    document.getElementById('stopButton').style.display='block';
+    showAlert('Rappel' + (r.note ? ' : '+r.note : ''));
     if(navigator.vibrate) navigator.vibrate(500);
   }
 }
@@ -297,15 +287,10 @@ async function checkRemindersFirestore(){
 function stopAlarm(){
   const sound=document.getElementById('alarmSound');
   sound.pause(); sound.currentTime=0; closeAlert();
-  const stopBtn=document.getElementById('stopButton'); if(stopBtn) stopBtn.style.display='none';
+  document.getElementById('stopButton').style.display='none';
 }
 function showAlert(message){
-  const m=document.getElementById('alert-message'); if(m) m.innerText=message;
-  const o=document.getElementById('custom-alert'); if(o) o.style.display='flex';
+  document.getElementById('alert-message').innerText=message;
+  document.getElementById('custom-alert').style.display='flex';
 }
-function closeAlert(){ const o=document.getElementById('custom-alert'); if(o) o.style.display='none'; }
-
-/* =========================
-   CSS conseillé pour la surbrillance (dans style.css)
-   #calendar td.selected { outline: 2px solid #1976d2; background: #eaf3ff; }
-========================= */
+function closeAlert(){ document.getElementById('custom-alert').style.display='none'; }
