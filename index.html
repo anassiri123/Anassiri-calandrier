@@ -182,6 +182,14 @@
       }
     });
   </script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('./firebase-messaging-sw.js')   // même dossier que index.html
+      .then(reg => console.log('Service Worker enregistré :', reg.scope))
+      .catch(err => console.error('SW erreur :', err));
+  }
+  </script>
 
   <!-- Script applicatif -->
   <script src="scripte.js"></script>
