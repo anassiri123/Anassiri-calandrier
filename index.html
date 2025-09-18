@@ -5,19 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calendrier Médical Senior</title>
 
-  <link rel="stylesheet" href="style.css" />
+  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1976d2">
-
-  <!-- iOS (ouvrir en plein écran après "Sur l'écran d'accueil") -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="logoalarm-192.png">
 
-  <!-- Icônes navigateur (facultatif) -->
+  <!-- Icône navigateur -->
   <link rel="icon" href="logoalarm-192.png" type="image/png">
 
-  <!-- Styles de base (rapides) -->
+  <!-- Styles rapides (tu peux garder/ajouter style.css si tu veux) -->
   <style>
     :root { --primary:#1976d2; --bg:#f2f3f5; }
     *{box-sizing:border-box}
@@ -106,10 +104,7 @@
       <div style="margin-top:14px">
         <p>Date sélectionnée : <strong id="selected-date">Aucune</strong></p>
         <textarea id="calendar-note" class="input" placeholder="Écrire un rappel pour cette date..."></textarea>
-
-        <!-- step=60 = minutes entières, aide certains mobiles -->
         <input id="calendar-time" class="input" type="time" step="60">
-
         <button id="startButton" class="btn" type="button" onclick="startApp()">Continuer</button>
         <button class="btn btn-fill" type="button" onclick="saveCalendarNote()">Sauvegarder</button>
         <span id="calendar-msg" style="display:none;margin-left:8px;color:green">Rappel sauvegardé !</span>
@@ -119,7 +114,7 @@
     <audio id="alarmSound" src="mario_theme.mp3" preload="auto"></audio>
   </div>
 
-  <!-- Ouvrir / fermer la modale d'inscription -->
+  <!-- Ouvrir/fermer la modale -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const modal = document.getElementById('signup-modal');
@@ -149,6 +144,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
     import { getFirestore }  from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
@@ -163,10 +159,37 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
+    // Expose pour scripte.js
     window.auth = auth;
     window.db   = db;
     window.dispatchEvent(new Event('firebase-ready'));
 
+    // Enregistrer le Service Worker (pour PWA + FCM)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./firebase-messaging-sw.js')
+        .then(reg => console.log('SW OK :', reg.scope))
+        .catch(err => console.error('SW ERROR :', err));
+    }
+
+    // (Option FUTUR push) – récupère le token FCM avec ta clé publique VAPID
+    // Ça n’envoie pas encore de notifications programmées (il faut un petit serveur),
+    // mais ça prépare le terrain proprement.
+    try {
+      const messaging = getMessaging(app);
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const token = await getToken(messaging, {
+          vapidKey: "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0"
+        });
+        console.log('FCM token (à utiliser coté serveur plus tard) :', token);
+      } else {
+        console.log("Notifications refusées.");
+      }
+    } catch (e) {
+      console.log("FCM init (facultatif) :", e?.message || e);
+    }
+
+    // Masquer/afficher le bouton "Créer un compte" selon l’état d’auth
     const signupBtn = document.getElementById('open-signup');
     const signupModal = document.getElementById('signup-modal');
 
@@ -182,14 +205,6 @@
       }
     });
   </script>
-  <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('./firebase-messaging-sw.js')   // même dossier que index.html
-      .then(reg => console.log('Service Worker enregistré :', reg.scope))
-      .catch(err => console.error('SW erreur :', err));
-  }
-</script>
 
   <!-- Script applicatif -->
   <script src="scripte.js"></script>
