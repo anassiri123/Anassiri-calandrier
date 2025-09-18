@@ -1,8 +1,9 @@
 {
   "name": "Calendrier Médical",
   "short_name": "Calendrier",
-  "start_url": "/index.html",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f2f3f5",
   "theme_color": "#1976d2",
