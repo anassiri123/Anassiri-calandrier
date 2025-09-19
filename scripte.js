@@ -2,16 +2,32 @@
    AUTH + FIRESTORE + WEB PUSH (Firebase)
 ========================= */
 
-// --- util
+/* ---------- Utilitaires UI ---------- */
 function isLikelyEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||"").trim()); }
-function showAuth(){ document.getElementById('auth')?.style.setProperty('display','flex'); document.getElementById('app')?.style.setProperty('display','none'); document.getElementById('open-signup')?.classList.remove('hidden'); }
-function showApp(){  document.getElementById('auth')?.style.setProperty('display','none');  document.getElementById('app')?.style.setProperty('display','block'); document.getElementById('open-signup')?.classList.add('hidden'); }
-function friendlyAuthError(e){ const c=(e&&e.code)||''; if(c.includes('invalid-email'))return"Email invalide."; if(c.includes('user-disabled'))return"Compte désactivé."; if(c.includes('user-not-found'))return"Aucun compte pour cet email."; if(c.includes('wrong-password'))return"Mot de passe incorrect."; if(c.includes('weak-password'))return"Mot de passe trop court (≥ 6)."; if(c.includes('email-already-in-use'))return"Email déjà utilisé."; if(c.includes('configuration-not-found'))return"Active 'Adresse e-mail/Mot de passe' dans Firebase Authentication."; return e.message||"Erreur inconnue."; }
+function showAuth(){
+  document.getElementById('auth')?.style.setProperty('display','flex');
+  document.getElementById('app')?.style.setProperty('display','none');
+  document.getElementById('open-signup')?.classList.remove('hidden');
+}
+function showApp(){
+  document.getElementById('auth')?.style.setProperty('display','none');
+  document.getElementById('app')?.style.setProperty('display','block');
+  document.getElementById('open-signup')?.classList.add('hidden');
+}
+function friendlyAuthError(e){
+  const c=(e&&e.code)||'';
+  if(c.includes('invalid-email')) return "Email invalide.";
+  if(c.includes('user-disabled')) return "Compte désactivé.";
+  if(c.includes('user-not-found')) return "Aucun compte pour cet email.";
+  if(c.includes('wrong-password')) return "Mot de passe incorrect.";
+  if(c.includes('weak-password')) return "Mot de passe trop court (≥ 6).";
+  if(c.includes('email-already-in-use')) return "Email déjà utilisé.";
+  if(c.includes('configuration-not-found')) return "Active 'Adresse e-mail/Mot de passe' dans Firebase Authentication.";
+  return e.message||"Erreur inconnue.";
+}
 
-// ========= VAPID PUBLIC =========
+/* ---------- VAPID public (Web Push) ---------- */
 const VAPID_PUBLIC_KEY = "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0";
-
-// util VAPID
 function urlBase64ToUint8Array(base64String){
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -19,17 +35,13 @@ function urlBase64ToUint8Array(base64String){
   for (let i=0;i<raw.length;i++) output[i]=raw.charCodeAt(i);
   return output;
 }
-
-// Enregistrer l’abonnement Push dans Firestore
 async function ensurePushSubscription(uid){
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return; // navigateur non compatible
   let perm = Notification.permission;
   if(perm === 'default'){ perm = await Notification.requestPermission(); }
-  if(perm !== 'granted') return;
+  if(perm !== 'granted') return; // pas d'autorisation
 
   const reg = await navigator.serviceWorker.ready;
-
   let sub = await reg.pushManager.getSubscription();
   if(!sub){
     sub = await reg.pushManager.subscribe({
@@ -38,7 +50,8 @@ async function ensurePushSubscription(uid){
     });
   }
 
-  const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
+  const { doc, setDoc, serverTimestamp } =
+    await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
   const id = btoa(sub.endpoint).replace(/=*$/,'');
   await setDoc(doc(window.db,"users",uid,"subscriptions",id), {
     endpoint: sub.endpoint,
@@ -47,7 +60,9 @@ async function ensurePushSubscription(uid){
   }, { merge:true });
 }
 
-/* ---------- Bootstrap ---------- */
+/* =========================
+   Bootstrap (connexion / inscription / état)
+========================= */
 async function bootstrap(){
   if(!window.auth || !window.db) return;
 
@@ -62,15 +77,32 @@ async function bootstrap(){
   const signupModal   = document.getElementById('signup-modal');
   const closeSignup   = document.getElementById('close-signup');
 
-  openSignupBtn?.addEventListener('click', ()=>{ if(window.auth?.currentUser) return; if(!signupModal)return; signupModal.style.display='block'; signupModal.setAttribute('aria-hidden','false'); });
-  closeSignup?.addEventListener('click', ()=>{ if(!signupModal)return; signupModal.style.display='none'; signupModal.setAttribute('aria-hidden','true'); });
-  window.addEventListener('click', (e)=>{ if(e.target===signupModal){ signupModal.style.display='none'; signupModal.setAttribute('aria-hidden','true'); } });
+  // Ouvrir/fermer la modale
+  openSignupBtn?.addEventListener('click', ()=>{
+    if (window.auth?.currentUser) return;
+    if (!signupModal) return;
+    signupModal.style.display='block';
+    signupModal.setAttribute('aria-hidden','false');
+  });
+  closeSignup?.addEventListener('click', ()=>{
+    if (!signupModal) return;
+    signupModal.style.display='none';
+    signupModal.setAttribute('aria-hidden','true');
+  });
+  window.addEventListener('click', (e)=>{
+    if(e.target===signupModal){
+      signupModal.style.display='none';
+      signupModal.setAttribute('aria-hidden','true');
+    }
+  });
 
+  // Connexion
   btnLogin?.addEventListener('click', async ()=>{
-    const email=(emailIn?.value||'').trim(); const pass=(passIn?.value||'');
-    if(!email||!pass){ if(errEl)errEl.textContent="Remplis l'email et le mot de passe."; return; }
-    if(!isLikelyEmail(email)){ if(errEl)errEl.textContent="Saisis un email valide."; return; }
-    if(errEl)errEl.textContent='';
+    const email=(emailIn?.value||'').trim();
+    const pass =(passIn?.value||'');
+    if(!email||!pass){ if(errEl) errEl.textContent="Remplis l'email et le mot de passe."; return; }
+    if(!isLikelyEmail(email)){ if(errEl) errEl.textContent="Saisis un email valide."; return; }
+    if(errEl) errEl.textContent='';
     try{
       const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
       await signInWithEmailAndPassword(window.auth,email,pass);
@@ -78,6 +110,7 @@ async function bootstrap(){
   });
   passIn?.addEventListener('keydown', e=>{ if(e.key==='Enter') btnLogin?.click(); });
 
+  // Inscription
   btnSignup?.addEventListener('click', async ()=>{
     const email=(document.getElementById('su-email')?.value||'').trim();
     const pass =(document.getElementById('su-password')?.value||'');
@@ -85,43 +118,50 @@ async function bootstrap(){
     try{
       if(!isLikelyEmail(email)) throw {code:'auth/invalid-email'};
       if(!pass || pass.length<6) throw {code:'auth/weak-password'};
-      const { createUserWithEmailAndPassword, sendEmailVerification, signOut } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
+      const { createUserWithEmailAndPassword, sendEmailVerification, signOut } =
+        await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
       const cred = await createUserWithEmailAndPassword(window.auth,email,pass);
       await sendEmailVerification(cred.user);
       await signOut(window.auth);
       if(errEl){ errEl.style.color='green'; errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi."; setTimeout(()=>{ errEl.style.color=''; }, 4000); }
-      if(signupModal){ signupModal.style.display='none'; signupModal.setAttribute('aria-hidden','true'); }
+      if (signupModal){ signupModal.style.display='none'; signupModal.setAttribute('aria-hidden','true'); }
     }catch(e){ if(errEl){ errEl.style.color=''; errEl.textContent="Firebase: "+friendlyAuthError(e); } }
   });
 
+  // Déconnexion
   btnLogout?.addEventListener('click', ()=>{
     import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js")
       .then(({signOut})=>signOut(window.auth))
       .catch(console.error);
   });
 
+  // Suivi d'état
   import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js")
-  .then(({ onAuthStateChanged, signOut })=>{
-    onAuthStateChanged(window.auth, async (user)=>{
-      if(user){
-        if(!user.emailVerified){
-          if(errEl) errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
-          try{ await signOut(window.auth);}catch{}
-          showAuth(); openSignupBtn?.classList.remove('hidden'); return;
+    .then(({ onAuthStateChanged, signOut })=>{
+      onAuthStateChanged(window.auth, async (user)=>{
+        if(user){
+          if(!user.emailVerified){
+            if(errEl) errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
+            try{ await signOut(window.auth); }catch{}
+            showAuth(); openSignupBtn?.classList.remove('hidden'); return;
+          }
+          currentUid=user.uid;
+          showApp();
+          openSignupBtn?.classList.add('hidden');
+          if (signupModal && signupModal.style.display==='block'){
+            signupModal.style.display='none';
+            signupModal.setAttribute('aria-hidden','true');
+          }
+
+          // Abonnement Web Push
+          try{ await ensurePushSubscription(user.uid); }catch(e){ console.warn('Subscription failed', e); }
+
+          await initAppForUser();
+        }else{
+          currentUid=null; showAuth(); openSignupBtn?.classList.remove('hidden');
         }
-        currentUid=user.uid; showApp();
-        openSignupBtn?.classList.add('hidden');
-        if(signupModal && signupModal.style.display==='block'){ signupModal.style.display='none'; signupModal.setAttribute('aria-hidden','true'); }
-
-        // ✅ abonnement push
-        try { await ensurePushSubscription(user.uid); } catch(e){ console.warn('Subscription failed', e); }
-
-        await initAppForUser();
-      }else{
-        currentUid=null; showAuth(); openSignupBtn?.classList.remove('hidden');
-      }
+      });
     });
-  });
 }
 
 if(window.auth && window.db){ bootstrap(); }
@@ -131,20 +171,22 @@ else{ window.addEventListener('firebase-ready', bootstrap, { once:true }); }
    Firestore (rappels)
 ========================= */
 async function saveReminderForUser(uid,dateISO,note,time,timeUTC,dateUTC){
-  const { doc,setDoc,serverTimestamp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
+  const { doc,setDoc,serverTimestamp } =
+    await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
   const ref=doc(window.db,"users",uid,"reminders",dateISO);
   return setDoc(ref,{
     note: note||"",
     time: time||"",
     date: dateISO,
-    timeUTC: timeUTC,
-    dateUTC: dateUTC,
+    timeUTC: timeUTC || null,
+    dateUTC: dateUTC || null,
     sent: false,
     updatedAt: serverTimestamp()
   },{merge:true});
 }
 async function getReminderForUser(uid,dateISO){
-  const { doc,getDoc } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
+  const { doc,getDoc } =
+    await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
   const ref=doc(window.db,"users",uid,"reminders",dateISO);
   const snap=await getDoc(ref);
   return snap.exists()?snap.data():null;
@@ -156,6 +198,9 @@ async function getReminderForUser(uid,dateISO){
 let selectedDate=null, currentMonth=new Date().getMonth(), currentYear=new Date().getFullYear();
 let audioEnabled=false, alarmTriggeredToday=false, reminderTimerId=null, appBound=false, currentUid=null;
 
+/* --- helpers bouton Sauvegarder --- */
+function getSaveButton(){ return document.getElementById('saveButton'); }
+
 function startApp(){
   audioEnabled=true;
   const btn=document.getElementById('startButton'); if(btn) btn.style.display='none';
@@ -165,22 +210,31 @@ function startApp(){
 
 async function initAppForUser(){
   generateCalendar(currentMonth,currentYear);
+
+  // auto-sélectionne aujourd’hui
   const todayISO = new Date().toISOString().split('T')[0];
   await selectDate(todayISO);
 
   if(reminderTimerId) clearInterval(reminderTimerId);
-  reminderTimerId=setInterval(checkRemindersFirestore,1000);
+  reminderTimerId = setInterval(checkRemindersFirestore, 1000);
 
   if(!appBound){
-    document.getElementById("closeAlertBtn")?.addEventListener("click",closeAlert);
-    document.getElementById("calendar-time")?.addEventListener("input",()=>{ document.getElementById("startButton").style.display="block"; });
-    appBound=true;
+    document.getElementById("closeAlertBtn")?.addEventListener("click", closeAlert);
+
+    // Quand l’heure change : montrer "Continuer" + réafficher "Sauvegarder"
+    document.getElementById("calendar-time")?.addEventListener("input", ()=>{
+      document.getElementById("startButton").style.display = "block";
+      const sb = getSaveButton(); if(sb) sb.style.display = "inline-block";
+    });
+
+    appBound = true;
   }
 }
 
 function highlightCell(dateISO){
   document.querySelectorAll('#calendar td.selected').forEach(td=>td.classList.remove('selected'));
-  const cell=[...document.querySelectorAll('#calendar td')].find(td=>td.getAttribute('onclick')?.includes(dateISO));
+  const cell=[...document.querySelectorAll('#calendar td')]
+    .find(td=>td.getAttribute('onclick')?.includes(dateISO));
   if(cell) cell.classList.add('selected');
 }
 
@@ -188,7 +242,9 @@ function generateCalendar(month,year){
   const days=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
   const firstDay=new Date(year,month,1).getDay();
   const daysInMonth=new Date(year,month+1,0).getDate();
-  let html='<table><tr>'; for(const d of days) html+=`<th>${d}</th>`; html+='</tr><tr>';
+  let html='<table><tr>';
+  for(const d of days) html+=`<th>${d}</th>`;
+  html+='</tr><tr>';
   for(let i=0;i<firstDay;i++) html+='<td></td>';
   for(let day=1;day<=daysInMonth;day++){
     const fullDate=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
@@ -197,7 +253,8 @@ function generateCalendar(month,year){
   }
   html+='</tr></table>';
   document.getElementById('calendar').innerHTML=html;
-  document.getElementById('month-year').innerText=new Date(year,month).toLocaleString('fr-FR',{month:'long'})+' '+year;
+  document.getElementById('month-year').innerText=
+    new Date(year,month).toLocaleString('fr-FR',{month:'long'})+' '+year;
 }
 
 function changeMonth(offset){
@@ -221,10 +278,13 @@ async function selectDate(dateISO){
     document.getElementById('calendar-note').value='';
     document.getElementById('calendar-time').value='';
   }
+
+  // Montrer "Continuer", cacher "Sauvegarder" tant qu'on ne modifie rien
   document.getElementById("startButton").style.display="block";
+  const sb = getSaveButton(); if(sb) sb.style.display = "none";
 }
 
-// Convertit date/heure locale -> UTC (au format YYYY-MM-DD et HH:MM)
+/* Conversion locale -> UTC (si tu en as besoin côté serveur) */
 function localToUTC(dateISO,timeHM){
   const d = new Date(`${dateISO}T${timeHM}:00`);
   const yyyy = d.getUTCFullYear();
@@ -239,18 +299,16 @@ async function saveCalendarNote(){
   if(!selectedDate) return alert('Veuillez sélectionner une date.');
   if(!currentUid)  return alert('Veuillez vous connecter.');
 
-  const note = (document.getElementById('calendar-note')?.value || '').trim();
+  const note  = (document.getElementById('calendar-note')?.value || '').trim();
   const timeEl = document.getElementById('calendar-time');
 
   let time = (timeEl?.value || '').trim();
   if(!time && timeEl?.getAttribute('value')) time = timeEl.getAttribute('value').trim();
 
-  // 🔹 Normalisation en HH:MM
-  if(time && time.includes(":")){
-    const parts = time.split(":");
-    let h = parts[0].padStart(2,"0");
-    let m = parts[1].padStart(2,"0");
-    time = `${h}:${m}`;
+  // Normaliser HH:MM
+  if(time && time.includes(':')){
+    const [h,m] = time.split(':');
+    time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   }
 
   const msg = document.getElementById('calendar-msg');
@@ -264,19 +322,20 @@ async function saveCalendarNote(){
     return;
   }
 
-  // ➜ calcul UTC pour éviter les valeurs undefined dans Firestore
-  const { timeUTC, dateUTC } = localToUTC(selectedDate, time);
-
   if(!audioEnabled) startApp();
 
+  const { timeUTC, dateUTC } = localToUTC(selectedDate, time);
   await saveReminderForUser(currentUid, selectedDate, note, time, timeUTC, dateUTC);
 
   if(msg){
     msg.style.display='inline';
     msg.style.color='green';
     msg.textContent='Rappel sauvegardé !';
-    setTimeout(()=>{ msg.style.display='none'; }, 2000);
+    setTimeout(()=>{ msg.style.display='none'; }, 1500);
   }
+
+  // ➜ cacher le bouton "Sauvegarder" après succès
+  const sb = getSaveButton(); if(sb) sb.style.display = "none";
 }
 
 async function checkRemindersFirestore(){
@@ -284,6 +343,8 @@ async function checkRemindersFirestore(){
 
   const now=new Date();
   const dateStr=now.toISOString().split('T')[0];
+
+  // reset quotidien
   if(window._lastDate!==dateStr){ window._lastDate=dateStr; alarmTriggeredToday=false; }
   if(alarmTriggeredToday) return;
 
@@ -291,13 +352,22 @@ async function checkRemindersFirestore(){
   const r=await getReminderForUser(currentUid,dateStr);
   if(r && r.time===timeStr){
     alarmTriggeredToday=true;
-    const sound=document.getElementById('alarmSound'); sound.play().catch(()=>{});
+    const sound=document.getElementById('alarmSound');
+    sound.play().catch(()=>{});
     document.getElementById('stopButton').style.display='block';
     showAlert(r.note ? ('Rappel : '+r.note) : 'Rappel');
     if(navigator.vibrate) navigator.vibrate(500);
   }
 }
 
-function stopAlarm(){ const sound=document.getElementById('alarmSound'); sound.pause(); sound.currentTime=0; closeAlert(); document.getElementById('stopButton').style.display='none'; }
-function showAlert(message){ document.getElementById('alert-message').innerText=message; document.getElementById('custom-alert').style.display='flex'; }
+function stopAlarm(){
+  const sound=document.getElementById('alarmSound');
+  if(sound){ sound.pause(); sound.currentTime=0; }
+  closeAlert();
+  document.getElementById('stopButton').style.display='none';
+}
+function showAlert(message){
+  document.getElementById('alert-message').innerText=message;
+  document.getElementById('custom-alert').style.display='flex';
+}
 function closeAlert(){ document.getElementById('custom-alert').style.display='none'; }
