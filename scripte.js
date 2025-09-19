@@ -105,7 +105,7 @@ async function bootstrap(){
     onAuthStateChanged(window.auth, async (user)=>{
       if(user){
         if(!user.emailVerified){
-          errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
+          if(errEl) errEl.textContent="Ton email n’est pas vérifié. Clique sur le lien reçu par email, puis reconnecte-toi.";
           try{ await signOut(window.auth);}catch{}
           showAuth(); openSignupBtn?.classList.remove('hidden'); return;
         }
@@ -224,6 +224,7 @@ async function selectDate(dateISO){
   document.getElementById("startButton").style.display="block";
 }
 
+// Convertit date/heure locale -> UTC (au format YYYY-MM-DD et HH:MM)
 function localToUTC(dateISO,timeHM){
   const d = new Date(`${dateISO}T${timeHM}:00`);
   const yyyy = d.getUTCFullYear();
@@ -245,7 +246,7 @@ async function saveCalendarNote(){
   if(!time && timeEl?.getAttribute('value')) time = timeEl.getAttribute('value').trim();
 
   // 🔹 Normalisation en HH:MM
-  if(time.includes(":")){
+  if(time && time.includes(":")){
     const parts = time.split(":");
     let h = parts[0].padStart(2,"0");
     let m = parts[1].padStart(2,"0");
@@ -263,9 +264,13 @@ async function saveCalendarNote(){
     return;
   }
 
+  // ➜ calcul UTC pour éviter les valeurs undefined dans Firestore
+  const { timeUTC, dateUTC } = localToUTC(selectedDate, time);
+
   if(!audioEnabled) startApp();
 
-  await saveReminderForUser(currentUid,selectedDate,note,time);
+  await saveReminderForUser(currentUid, selectedDate, note, time, timeUTC, dateUTC);
+
   if(msg){
     msg.style.display='inline';
     msg.style.color='green';
