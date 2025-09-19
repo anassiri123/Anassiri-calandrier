@@ -29,30 +29,30 @@ function friendlyAuthError(e){
 /* ---------- VAPID public (Web Push) ---------- */
 const VAPID_PUBLIC_KEY = "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0";
 function urlBase64ToUint8Array(base64String){
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = atob(base64); const output = new Uint8Array(raw.length);
-  for (let i=0;i<raw.length;i++) output[i]=raw.charCodeAt(i);
+  const padding='='.repeat((4 - base64String.length % 4) % 4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64); const output=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) output[i]=raw.charCodeAt(i);
   return output;
 }
 async function ensurePushSubscription(uid){
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return; // navigateur non compatible
-  let perm = Notification.permission;
-  if(perm === 'default'){ perm = await Notification.requestPermission(); }
-  if(perm !== 'granted') return; // pas d'autorisation
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  let perm=Notification.permission;
+  if(perm==='default') perm=await Notification.requestPermission();
+  if(perm!=='granted') return;
 
-  const reg = await navigator.serviceWorker.ready;
-  let sub = await reg.pushManager.getSubscription();
+  const reg=await navigator.serviceWorker.ready;
+  let sub=await reg.pushManager.getSubscription();
   if(!sub){
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    sub=await reg.pushManager.subscribe({
+      userVisibleOnly:true,
+      applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
   }
 
-  const { doc, setDoc, serverTimestamp } =
+  const { doc,setDoc,serverTimestamp } =
     await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
-  const id = btoa(sub.endpoint).replace(/=*$/,'');
+  const id=btoa(sub.endpoint).replace(/=*$/,'');
   await setDoc(doc(window.db,"users",uid,"subscriptions",id), {
     endpoint: sub.endpoint,
     keys: sub.toJSON().keys,
@@ -79,13 +79,13 @@ async function bootstrap(){
 
   // Ouvrir/fermer la modale
   openSignupBtn?.addEventListener('click', ()=>{
-    if (window.auth?.currentUser) return;
-    if (!signupModal) return;
+    if(window.auth?.currentUser) return;
+    if(!signupModal) return;
     signupModal.style.display='block';
     signupModal.setAttribute('aria-hidden','false');
   });
   closeSignup?.addEventListener('click', ()=>{
-    if (!signupModal) return;
+    if(!signupModal) return;
     signupModal.style.display='none';
     signupModal.setAttribute('aria-hidden','true');
   });
@@ -104,7 +104,8 @@ async function bootstrap(){
     if(!isLikelyEmail(email)){ if(errEl) errEl.textContent="Saisis un email valide."; return; }
     if(errEl) errEl.textContent='';
     try{
-      const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
+      const { signInWithEmailAndPassword } =
+        await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
       await signInWithEmailAndPassword(window.auth,email,pass);
     }catch(e){ if(errEl) errEl.textContent=friendlyAuthError(e); }
   });
@@ -120,11 +121,18 @@ async function bootstrap(){
       if(!pass || pass.length<6) throw {code:'auth/weak-password'};
       const { createUserWithEmailAndPassword, sendEmailVerification, signOut } =
         await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js");
-      const cred = await createUserWithEmailAndPassword(window.auth,email,pass);
+      const cred=await createUserWithEmailAndPassword(window.auth,email,pass);
       await sendEmailVerification(cred.user);
       await signOut(window.auth);
-      if(errEl){ errEl.style.color='green'; errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi."; setTimeout(()=>{ errEl.style.color=''; }, 4000); }
-      if (signupModal){ signupModal.style.display='none'; signupModal.setAttribute('aria-hidden','true'); }
+      if(errEl){
+        errEl.style.color='green';
+        errEl.textContent="Compte créé ! Vérifie l'email reçu puis reconnecte-toi.";
+        setTimeout(()=>{ errEl.style.color=''; }, 4000);
+      }
+      if(signupModal){
+        signupModal.style.display='none';
+        signupModal.setAttribute('aria-hidden','true');
+      }
     }catch(e){ if(errEl){ errEl.style.color=''; errEl.textContent="Firebase: "+friendlyAuthError(e); } }
   });
 
@@ -148,7 +156,7 @@ async function bootstrap(){
           currentUid=user.uid;
           showApp();
           openSignupBtn?.classList.add('hidden');
-          if (signupModal && signupModal.style.display==='block'){
+          if(signupModal && signupModal.style.display==='block'){
             signupModal.style.display='none';
             signupModal.setAttribute('aria-hidden','true');
           }
@@ -198,8 +206,11 @@ async function getReminderForUser(uid,dateISO){
 let selectedDate=null, currentMonth=new Date().getMonth(), currentYear=new Date().getFullYear();
 let audioEnabled=false, alarmTriggeredToday=false, reminderTimerId=null, appBound=false, currentUid=null;
 
-/* --- helpers bouton Sauvegarder --- */
-function getSaveButton(){ return document.getElementById('saveButton'); }
+/* Bouton "Sauvegarder" — tolère absence d'id */
+function getSaveButton(){
+  return document.getElementById('saveButton') ||
+         document.querySelector('button[onclick="saveCalendarNote()"]');
+}
 
 function startApp(){
   audioEnabled=true;
@@ -216,18 +227,20 @@ async function initAppForUser(){
   await selectDate(todayISO);
 
   if(reminderTimerId) clearInterval(reminderTimerId);
-  reminderTimerId = setInterval(checkRemindersFirestore, 1000);
+  // Vérification toutes les 5 s (fiable & économe)
+  reminderTimerId = setInterval(checkRemindersFirestore, 5000);
 
   if(!appBound){
     document.getElementById("closeAlertBtn")?.addEventListener("click", closeAlert);
 
     // Quand l’heure change : montrer "Continuer" + réafficher "Sauvegarder"
     document.getElementById("calendar-time")?.addEventListener("input", ()=>{
-      document.getElementById("startButton").style.display = "block";
+      const cont = document.getElementById("startButton");
+      if(cont) cont.style.display = "block";
       const sb = getSaveButton(); if(sb) sb.style.display = "inline-block";
     });
 
-    appBound = true;
+    appBound=true;
   }
 }
 
@@ -280,18 +293,18 @@ async function selectDate(dateISO){
   }
 
   // Montrer "Continuer", cacher "Sauvegarder" tant qu'on ne modifie rien
-  document.getElementById("startButton").style.display="block";
-  const sb = getSaveButton(); if(sb) sb.style.display = "none";
+  const cont=document.getElementById("startButton"); if(cont) cont.style.display="block";
+  const sb=getSaveButton(); if(sb) sb.style.display="none";
 }
 
-/* Conversion locale -> UTC (si tu en as besoin côté serveur) */
+/* Conversion locale -> UTC (utile côté serveur plus tard) */
 function localToUTC(dateISO,timeHM){
-  const d = new Date(`${dateISO}T${timeHM}:00`);
-  const yyyy = d.getUTCFullYear();
-  const mm   = String(d.getUTCMonth()+1).padStart(2,'0');
-  const dd   = String(d.getUTCDate()).padStart(2,'0');
-  const HH   = String(d.getUTCHours()).padStart(2,'0');
-  const MM   = String(d.getUTCMinutes()).padStart(2,'0');
+  const d=new Date(`${dateISO}T${timeHM}:00`);
+  const yyyy=d.getUTCFullYear();
+  const mm=String(d.getUTCMonth()+1).padStart(2,'0');
+  const dd=String(d.getUTCDate()).padStart(2,'0');
+  const HH=String(d.getUTCHours()).padStart(2,'0');
+  const MM=String(d.getUTCMinutes()).padStart(2,'0');
   return { dateUTC:`${yyyy}-${mm}-${dd}`, timeUTC:`${HH}:${MM}` };
 }
 
@@ -299,19 +312,19 @@ async function saveCalendarNote(){
   if(!selectedDate) return alert('Veuillez sélectionner une date.');
   if(!currentUid)  return alert('Veuillez vous connecter.');
 
-  const note  = (document.getElementById('calendar-note')?.value || '').trim();
-  const timeEl = document.getElementById('calendar-time');
+  const note =(document.getElementById('calendar-note')?.value||'').trim();
+  const timeEl=document.getElementById('calendar-time');
 
-  let time = (timeEl?.value || '').trim();
-  if(!time && timeEl?.getAttribute('value')) time = timeEl.getAttribute('value').trim();
+  let time=(timeEl?.value||'').trim();
+  if(!time && timeEl?.getAttribute('value')) time=timeEl.getAttribute('value').trim();
 
   // Normaliser HH:MM
   if(time && time.includes(':')){
-    const [h,m] = time.split(':');
+    let [h,m]=time.split(':');
     time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   }
 
-  const msg = document.getElementById('calendar-msg');
+  const msg=document.getElementById('calendar-msg');
   if(!time){
     if(msg){
       msg.style.display='inline';
@@ -325,7 +338,7 @@ async function saveCalendarNote(){
   if(!audioEnabled) startApp();
 
   const { timeUTC, dateUTC } = localToUTC(selectedDate, time);
-  await saveReminderForUser(currentUid, selectedDate, note, time, timeUTC, dateUTC);
+  await saveReminderForUser(currentUid,selectedDate,note,time,timeUTC,dateUTC);
 
   if(msg){
     msg.style.display='inline';
@@ -334,27 +347,36 @@ async function saveCalendarNote(){
     setTimeout(()=>{ msg.style.display='none'; }, 1500);
   }
 
-  // ➜ cacher le bouton "Sauvegarder" après succès
-  const sb = getSaveButton(); if(sb) sb.style.display = "none";
+  // Cacher "Sauvegarder" après succès
+  const sb=getSaveButton(); if(sb) sb.style.display="none";
 }
 
+/* Vérification périodique avec tolérance de 60 s */
 async function checkRemindersFirestore(){
-  if(!currentUid||!audioEnabled) return;
+  if(!currentUid || !audioEnabled) return;
 
   const now=new Date();
   const dateStr=now.toISOString().split('T')[0];
+  const nowMs=now.getTime();
 
   // reset quotidien
   if(window._lastDate!==dateStr){ window._lastDate=dateStr; alarmTriggeredToday=false; }
   if(alarmTriggeredToday) return;
 
-  const timeStr=now.toTimeString().slice(0,5);
   const r=await getReminderForUser(currentUid,dateStr);
-  if(r && r.time===timeStr){
+  if(!r || !r.time) return;
+
+  const [hh,mm]=r.time.split(':').map(n=>parseInt(n,10));
+  const target=new Date();
+  target.setHours(hh,mm,0,0);
+  const diff=Math.abs(nowMs - target.getTime()); // ms
+
+  // Tolérance ± 60 secondes
+  if(diff<=60000){
     alarmTriggeredToday=true;
     const sound=document.getElementById('alarmSound');
     sound.play().catch(()=>{});
-    document.getElementById('stopButton').style.display='block';
+    const stopBtn=document.getElementById('stopButton'); if(stopBtn) stopBtn.style.display='block';
     showAlert(r.note ? ('Rappel : '+r.note) : 'Rappel');
     if(navigator.vibrate) navigator.vibrate(500);
   }
@@ -364,10 +386,10 @@ function stopAlarm(){
   const sound=document.getElementById('alarmSound');
   if(sound){ sound.pause(); sound.currentTime=0; }
   closeAlert();
-  document.getElementById('stopButton').style.display='none';
+  const stopBtn=document.getElementById('stopButton'); if(stopBtn) stopBtn.style.display='none';
 }
 function showAlert(message){
-  document.getElementById('alert-message').innerText=message;
-  document.getElementById('custom-alert').style.display='flex';
+  const m=document.getElementById('alert-message'); if(m) m.innerText=message;
+  const o=document.getElementById('custom-alert'); if(o) o.style.display='flex';
 }
-function closeAlert(){ document.getElementById('custom-alert').style.display='none'; }
+function closeAlert(){ const o=document.getElementById('custom-alert'); if(o) o.style.display='none'; }
