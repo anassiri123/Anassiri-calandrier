@@ -238,23 +238,40 @@ async function saveCalendarNote(){
   if(!selectedDate) return alert('Veuillez sélectionner une date.');
   if(!currentUid)  return alert('Veuillez vous connecter.');
 
-  const note=(document.getElementById('calendar-note')?.value||'').trim();
-  const time=(document.getElementById('calendar-time')?.value||'').trim();
-  const msg=document.getElementById('calendar-msg');
+  const note = (document.getElementById('calendar-note')?.value || '').trim();
+  const timeEl = document.getElementById('calendar-time');
 
+  let time = (timeEl?.value || '').trim();
+  if(!time && timeEl?.getAttribute('value')) time = timeEl.getAttribute('value').trim();
+
+  // 🔹 Normalisation en HH:MM
+  if(time.includes(":")){
+    const parts = time.split(":");
+    let h = parts[0].padStart(2,"0");
+    let m = parts[1].padStart(2,"0");
+    time = `${h}:${m}`;
+  }
+
+  const msg = document.getElementById('calendar-msg');
   if(!time){
-    msg.style.display='inline'; msg.style.color='red';
-    msg.textContent="Choisis une heure avant d'enregistrer.";
-    setTimeout(()=>{ msg.style.display='none'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !'; }, 2000);
+    if(msg){
+      msg.style.display='inline';
+      msg.style.color='red';
+      msg.textContent="Choisis une heure avant d'enregistrer.";
+      setTimeout(()=>{ msg.style.display='none'; }, 2000);
+    }
     return;
   }
 
-  const { dateUTC, timeUTC } = localToUTC(selectedDate,time);
   if(!audioEnabled) startApp();
-  await saveReminderForUser(currentUid,selectedDate,note,time,timeUTC,dateUTC);
 
-  msg.style.display='inline'; msg.style.color='green'; msg.textContent='Rappel sauvegardé !';
-  setTimeout(()=>{ msg.style.display='none'; }, 2000);
+  await saveReminderForUser(currentUid,selectedDate,note,time);
+  if(msg){
+    msg.style.display='inline';
+    msg.style.color='green';
+    msg.textContent='Rappel sauvegardé !';
+    setTimeout(()=>{ msg.style.display='none'; }, 2000);
+  }
 }
 
 async function checkRemindersFirestore(){
