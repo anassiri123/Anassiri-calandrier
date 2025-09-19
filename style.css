@@ -1,98 +1,152 @@
-/* ======= APP EXISTANTE ======= */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f2f2f2;
-  color: #333;
-  padding: 20px;
-  max-width: 800px;
-  margin: auto;
-  position: relative;
-  min-height: 100vh;
+/* ============ Base & thème ============ */
+:root{
+  --primary:#1976d2;
+  --bg:#f2f3f5;
+  --text:#222;
+  --muted:#6b7280;
+  --card:#ffffff;
+  --shadow:0 8px 22px rgba(0,0,0,.08);
 }
 
-h1, h2 { text-align: center; color: #0066cc; }
-
-.medication-box, .calendar-box {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  /* Si tu as un motif local (optionnel) :
+     place Back.jpg à côté de index.html et dé-commente ci-dessous */
+  /* background-image:url("Back.jpg");
+  background-size: 400px 400px;
+  background-repeat: repeat; */
 }
 
-.time-label { font-weight: bold; margin-top: 10px; }
+/* ============ Header ============ */
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; background:var(--primary); color:#fff;
+  position: sticky; top:0; z-index: 10;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+header h1{ margin:0; font-size:20px; font-weight:700; }
 
-.status-btn {
-  margin: 5px; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;
+/* ============ Boutons ============ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  border:0; border-radius:10px; padding:10px 14px; cursor:pointer;
+  background:#e5e7eb; color:#111827; font-weight:600; transition:.15s;
 }
-.taken  { background-color: #4CAF50; color: white; }
-.missed { background-color: #f44336; color: white; }
+.btn:hover{ filter:brightness(.97); transform: translateY(-1px); }
+.btn:active{ transform: translateY(0); }
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
 
-.note-area, .time-input { width: 100%; padding: 10px; margin-top: 10px; font-size: 1em; }
-.save-msg { color: green; font-size: 0.9em; display: none; }
+.btn-primary{ background:#fff; color:var(--primary); }
+.btn-fill{ width:100%; background:var(--primary); color:#fff; }
 
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { width: 14.28%; text-align: center; padding: 8px; border: 1px solid #ccc; }
-td:hover { background-color: #e6f7ff; cursor: pointer; }
-
-.nav-buttons { text-align: center; margin-bottom: 10px; }
-.nav-buttons button { margin: 5px; padding: 8px 12px; }
-
-#startButton {
-  display: none;
-  margin: 15px 0 5px 0; padding: 12px 25px; font-size: 18px;
-  background-color: #0066cc; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%;
+/* ============ Inputs & messages ============ */
+.input{
+  width:100%; padding:12px 14px; margin:8px 0;
+  border:1px solid #e5e7eb; border-radius:10px; background:#fff;
+  font-size:16px; outline:none; transition: border-color .15s, box-shadow .15s;
 }
-
-#stopButton {
-  display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-  padding: 14px 30px; font-size: 18px; background-color: #f44336; color: white;
-  border: none; border-radius: 8px; cursor: pointer; z-index: 9999;
-}
-
-#custom-alert {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background-color: rgba(0, 102, 204, 0.8);
-  display: none; justify-content: center; align-items: center; z-index: 1000;
-}
-.alert-box {
-  background: white; border-radius: 10px; padding: 20px 30px; text-align: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-.alert-box button {
-  margin-top: 15px; padding: 10px 20px; font-size: 16px; background: #0066cc;
-  color: white; border: none; border-radius: 6px; cursor: pointer;
-}
-p[id^="status-"] { font-weight: bold; font-size: 16px; margin: 5px 0; }
-
-/* ======= CONNEXION ======= */
-.auth-overlay{
-  position: fixed; inset: 0; background: rgba(0,0,0,0.15);
-  display: flex; align-items: center; justify-content: center; z-index: 2000;
-}
-.auth-card{
-  width: 100%; max-width: 420px; background: #fff; padding: 24px; border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-.auth-title{ margin: 0 0 10px; color: #0066cc; text-align: center; }
-.auth-input{
-  width:100%; padding:12px; margin:8px 0; border:1px solid #ddd; border-radius:8px; font-size:16px;
-}
-.auth-btn{
-  width:100%; padding:12px; border:none; border-radius:8px; background:#0066cc; color:#fff; font-size:16px; cursor:pointer; margin-top:6px;
-}
-.auth-error{ color:#f44336; margin-top:8px; text-align:center; }
-
-/* Bouton logout */
-.logout{
-  position: sticky; top: 10px; float: right; margin-bottom: 10px;
-  background:#999; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;
+.input:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(25,118,210,.15);
 }
 
-/* cache proprement un élément */
-.hidden { display: none !important; }
+.err{ color:#d93025; margin-top:10px; text-align:center; min-height:22px; }
 
-#calendar td.selected {
-  outline: 2px solid #1976d2;
-  background: #eaf3ff;
+/* ============ Cartes ============ */
+.card{
+  width:100%; max-width:360px; background:var(--card);
+  border-radius:14px; padding:24px 20px; box-shadow: var(--shadow);
+}
+.card h2{ margin:6px 0 14px; color:var(--primary); text-align:center; }
+
+/* ============ Pages Auth & App ============ */
+#auth{
+  min-height: calc(100vh - 56px);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+#app{ display:none; padding:16px; }
+
+/* ============ Modale inscription ============ */
+.modal{
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,.45);
+}
+.modal__content{
+  width:92%; max-width:360px; margin:8vh auto; background:#fff;
+  border-radius:14px; padding:20px; position:relative; box-shadow:var(--shadow);
+}
+.modal__title{ margin:0 0 10px; color:var(--primary); text-align:center; }
+.modal__close{
+  position:absolute; right:10px; top:10px; border:0; background:transparent;
+  font-size:24px; line-height:1; cursor:pointer; color:#111827;
+}
+
+/* ============ Calendrier ============ */
+#month-year{
+  display:inline-block; min-width:180px; text-align:center;
+  color:#111827; font-weight:700;
+}
+
+#calendar{
+  overflow:auto; background:#fff; border-radius:14px; box-shadow: var(--shadow);
+}
+#calendar table{ width:100%; border-collapse:collapse; }
+#calendar th, #calendar td{
+  width:14.285%; text-align:center; padding:10px; border:1px solid #e5e7eb;
+  user-select:none;
+}
+#calendar th{
+  background:#f8fafc; font-weight:700; color:#374151;
+}
+#calendar td{ background:#fff; transition: background .12s, color .12s; }
+#calendar td:hover{ background:#f1f5f9; cursor:pointer; }
+#calendar td.selected{ outline:2px solid var(--primary); background:#eaf3ff; }
+
+/* ============ Zone rappel ============ */
+#calendar-note{ min-height:90px; resize:vertical; }
+#calendar-time{ }
+#calendar-msg{ display:none; margin-left:8px; color:green; font-weight:600; }
+
+/* ============ Boutons spéciaux ============ */
+#startButton{
+  display:none; margin:12px 0 6px 0; padding:12px 16px; font-size:16px;
+  border-radius:10px; background:linear-gradient(180deg, #1e88e5 0%, #1976d2 100%);
+  color:#fff; border:none; cursor:pointer;
+}
+#stopButton{
+  display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  padding:14px 24px; font-size:16px; background:#ef4444; color:#fff;
+  border:none; border-radius:12px; cursor:pointer; z-index:1100; box-shadow:var(--shadow);
+}
+
+/* ============ Alerte custom (popup) ============ */
+#custom-alert{
+  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background: rgba(0, 0, 0, .4); z-index:1200;
+}
+#custom-alert .card{
+  max-width:320px; text-align:center;
+}
+#alert-message{ margin:0 0 10px; }
+
+/* ============ Utils ============ */
+.hidden{ display:none !important; }
+
+/* ============ Mise en page plus large ============ */
+@media (min-width:900px){
+  .card{ max-width:860px; }
+  /* petite barre avec les boutons Mois précédent / suivant */
+  .nav-inline{
+    display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px;
+  }
+}
+
+/* ============ Accessibilité légère ============ */
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
 }
