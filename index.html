@@ -3,61 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calendrier Médical Senior</title>
+  <title>Calendrier Médical</title>
 
-  <!-- PWA -->
+  <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1976d2">
+
+  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="logoalarm-192.png">
 
-  <!-- Icône navigateur -->
   <link rel="icon" href="logoalarm-192.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
-  <!-- Styles rapides (tu peux garder/ajouter style.css si tu veux) -->
-  <style>
-    :root { --primary:#1976d2; --bg:#f2f3f5; }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto}
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--primary);color:#fff}
-    header h1{margin:0;font-size:20px;font-weight:700}
-    .btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
-    .btn-primary{background:#fff;color:var(--primary);font-weight:600}
-    .btn-primary:active{opacity:.9}
-    .hidden{display:none !important;}
-
-    /* Carte de connexion au centre */
-    #auth{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:20px}
-    .card{width:100%;max-width:360px;background:#fff;border-radius:14px;padding:24px 20px;box-shadow:0 8px 22px rgba(0,0,0,.08)}
-    .card h2{margin:6px 0 14px;color:var(--primary);text-align:center}
-    .input{width:100%;padding:12px 14px;margin:8px 0;border:1px solid #e0e0e0;border-radius:10px;background:#fff}
-    .btn-fill{width:100%;background:var(--primary);color:#fff;font-weight:600;margin-top:8px}
-    .err{color:#d93025;margin-top:10px;text-align:center}
-
-    /* Modale inscription */
-    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000}
-    .modal__content{width:92%;max-width:360px;margin:8vh auto;background:#fff;border-radius:14px;padding:20px;position:relative}
-    .modal__title{margin:0 0 10px;color:var(--primary);text-align:center}
-    .modal__close{position:absolute;right:10px;top:10px;border:0;background:transparent;font-size:22px;cursor:pointer}
-
-    /* App masquée tant qu'on n'est pas connecté */
-    #app{display:none;padding:16px}
-
-    /* Surbrillance jour choisi */
-    #calendar td.selected{outline:2px solid #1976d2;background:#eaf3ff}
-  </style>
 </head>
 <body>
 
   <!-- En-tête -->
-  <header>
+  <header class="topbar">
     <h1>Calendrier Médical</h1>
     <button id="open-signup" class="btn btn-primary" type="button">Créer un compte</button>
   </header>
 
-  <!-- ====== CONNEXION ====== -->
-  <main id="auth">
+  <!-- ===== Connexion ===== -->
+  <main id="auth" class="auth">
     <div class="card">
       <h2>Connexion</h2>
       <input id="li-email" class="input" type="email" placeholder="Email" autocomplete="email">
@@ -67,7 +35,7 @@
     </div>
   </main>
 
-  <!-- ====== MODALE - CRÉATION DE COMPTE ====== -->
+  <!-- ===== Modale - Création de compte ===== -->
   <div id="signup-modal" class="modal" aria-hidden="true">
     <div class="modal__content">
       <button id="close-signup" class="modal__close" type="button" aria-label="Fermer">&times;</button>
@@ -78,73 +46,54 @@
     </div>
   </div>
 
-  <!-- ====== APP (après connexion) ====== -->
-  <div id="app">
+  <!-- ===== App ===== -->
+  <div id="app" class="app">
     <button id="logoutButton" class="btn" type="button">Se déconnecter</button>
-    <button id="stopButton" class="btn" type="button" onclick="stopAlarm()" style="display:none">Arrêter l'alarme</button>
+    <button id="stopButton" class="btn danger" type="button" onclick="stopAlarm()" style="display:none">Arrêter l'alarme</button>
 
-    <div id="custom-alert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:1000">
+    <!-- Alerte -->
+    <div id="custom-alert" class="overlay" style="display:none">
       <div class="card" style="max-width:320px">
         <p id="alert-message" style="margin:0 0 10px"></p>
         <button id="closeAlertBtn" class="btn btn-fill" type="button">Fermer</button>
       </div>
     </div>
 
-    <h2 style="color:var(--primary)">Rappels médicaux</h2>
+    <h2 class="section-title">Rappels médicaux</h2>
 
-    <div class="card" style="max-width:860px">
-      <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px">
+    <div class="card big">
+      <div class="calendar-nav">
         <button type="button" class="btn" onclick="changeMonth(-1)">Mois précédent</button>
         <strong id="month-year"></strong>
         <button type="button" class="btn" onclick="changeMonth(1)">Mois suivant</button>
       </div>
 
-      <div id="calendar" style="overflow:auto"></div>
+      <div id="calendar" class="calendar"></div>
 
-      <div style="margin-top:14px">
+      <div class="editor">
         <p>Date sélectionnée : <strong id="selected-date">Aucune</strong></p>
         <textarea id="calendar-note" class="input" placeholder="Écrire un rappel pour cette date..."></textarea>
+
+        <!-- step=60 pour minutes entières -->
         <input id="calendar-time" class="input" type="time" step="60">
-        <button id="startButton" class="btn" type="button" onclick="startApp()">Continuer</button>
-        <button id="saveButton" class="btn btn-fill" type="button" onclick="saveCalendarNote()">Sauvegarder</button>
-        <span id="calendar-msg" style="display:none;margin-left:8px;color:green">Rappel sauvegardé !</span>
+
+        <div class="actions">
+          <button id="startButton" class="btn" type="button" onclick="startApp()">Continuer</button>
+          <!-- IMPORTANT: id=saveButton pour que le JS puisse le cacher/afficher -->
+          <button id="saveButton" class="btn btn-fill" type="button" onclick="saveCalendarNote()">Sauvegarder</button>
+          <span id="calendar-msg" class="savemsg" style="display:none">Rappel sauvegardé !</span>
+        </div>
       </div>
     </div>
 
     <audio id="alarmSound" src="mario_theme.mp3" preload="auto"></audio>
   </div>
 
-  <!-- Ouvrir/fermer la modale -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const modal = document.getElementById('signup-modal');
-      const openBtn = document.getElementById('open-signup');
-      const closeBtn = document.getElementById('close-signup');
-
-      openBtn.addEventListener('click', () => {
-        if (window.auth && window.auth.currentUser) return;
-        modal.style.display = 'block';
-        modal.setAttribute('aria-hidden','false');
-      });
-      closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        modal.setAttribute('aria-hidden','true');
-      });
-      window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.style.display = 'none';
-          modal.setAttribute('aria-hidden','true');
-        }
-      });
-    });
-  </script>
-
-  <!-- ====== Firebase (expose auth & db + signal 'firebase-ready') ====== -->
+  <!-- ===== Firebase expose auth & db ===== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
     import { getFirestore }  from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
@@ -159,40 +108,14 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // Expose pour scripte.js
+    // Expose global
     window.auth = auth;
     window.db   = db;
     window.dispatchEvent(new Event('firebase-ready'));
 
-    // Enregistrer le Service Worker (pour PWA + FCM)
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./firebase-messaging-sw.js')
-        .then(reg => console.log('SW OK :', reg.scope))
-        .catch(err => console.error('SW ERROR :', err));
-    }
-
-    // (Option FUTUR push) – récupère le token FCM avec ta clé publique VAPID
-    // Ça n’envoie pas encore de notifications programmées (il faut un petit serveur),
-    // mais ça prépare le terrain proprement.
-    try {
-      const messaging = getMessaging(app);
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        const token = await getToken(messaging, {
-          vapidKey: "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0"
-        });
-        console.log('FCM token (à utiliser coté serveur plus tard) :', token);
-      } else {
-        console.log("Notifications refusées.");
-      }
-    } catch (e) {
-      console.log("FCM init (facultatif) :", e?.message || e);
-    }
-
-    // Masquer/afficher le bouton "Créer un compte" selon l’état d’auth
-    const signupBtn = document.getElementById('open-signup');
+    // Cache le bouton "Créer un compte" si déjà connecté
+    const signupBtn   = document.getElementById('open-signup');
     const signupModal = document.getElementById('signup-modal');
-
     onAuthStateChanged(auth, (user) => {
       if (user) {
         signupBtn.classList.add('hidden');
@@ -206,7 +129,16 @@
     });
   </script>
 
-  <!-- Script applicatif -->
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('./firebase-messaging-sw.js')
+        .catch(err => console.error('SW erreur :', err));
+    }
+  </script>
+
+  <!-- App -->
   <script src="scripte.js"></script>
 </body>
 </html>
