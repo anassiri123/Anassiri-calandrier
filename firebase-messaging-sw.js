@@ -14,6 +14,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
+  // s’exécute quand un PUSH arrive et que la page est fermée
   self.registration.showNotification(payload.notification?.title || "Rappel", {
     body: payload.notification?.body || "",
     icon: "/logoalarm-192.png"
