@@ -137,7 +137,54 @@
         .catch(err => console.error('SW erreur :', err));
     }
   </script>
+<script type="module">
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
+  // réutilise les instances exposées par index.html
+  const auth = window.auth;
+  const db   = window.db;
+
+  // 1) Assure-toi que le SW est prêt
+  const reg = await navigator.serviceWorker.ready;
+
+  // 2) Instancie messaging
+  const messaging = getMessaging();
+
+  // 3) Quand l’utilisateur est connecté, enregistre le token FCM
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    // Demande permission si nécessaire
+    if (Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+    if (Notification.permission !== "granted") return;
+
+    try {
+      const token = await getToken(messaging, {
+        vapidKey: "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0",
+        serviceWorkerRegistration: reg
+      });
+      if (token) {
+        await setDoc(
+          doc(db, "users", user.uid, "fcmTokens", token),
+          { active: true, createdAt: serverTimestamp() },
+          { merge: true }
+        );
+        console.log("FCM token enregistré");
+      }
+    } catch (e) {
+      console.warn("FCM getToken error:", e);
+    }
+  });
+
+  // (optionnel) quand une notif arrive pendant que la page est OUVERTE
+  onMessage(messaging, (payload) => {
+    console.log("Push reçu en avant-plan:", payload);
+  });
+</script>
   <!-- App -->
   <script src="scripte.js"></script>
 </body>
