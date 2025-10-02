@@ -1,191 +1,194 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calendrier Médical</title>
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1976d2">
-
-  <!-- iOS -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="logoalarm-192.png">
-
-  <link rel="icon" href="logoalarm-192.png" type="image/png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calendrier AN — Accueil</title>
+  <link rel="icon" href="/logoalarm-192.png" />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--muted:#6b7280;--accent:#2563eb;--text:#e5e7eb;--ok:#16a34a;--danger:#ef4444}
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b1220;color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;backdrop-filter:blur(6px);background:rgba(2,6,23,.7);border-bottom:1px solid rgba(148,163,184,.15);z-index:50}
+    .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand img{width:34px;height:34px;border-radius:9px}
+    .menu{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{padding:10px 14px;border-radius:12px;background:#0b1220;border:1px solid rgba(148,163,184,.2);cursor:pointer;color:var(--text)}
+    .btn:hover{border-color:rgba(148,163,184,.45)}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+    .btn.danger{background:transparent;border-color:rgba(239,68,68,.5);color:#fecaca}
+    main{min-height:65vh}
+    .card{background:linear-gradient(180deg,rgba(17,24,39,.85),rgba(2,6,23,.7));border:1px solid rgba(148,163,184,.15);border-radius:16px;padding:18px}
+    .grid{display:grid;gap:16px}
+    @media(min-width:768px){.grid.cols-2{grid-template-columns:1fr 1fr}}
+    footer{border-top:1px solid rgba(148,163,184,.15);padding:24px 0;color:var(--muted)}
+    /* AUTH */
+    .auth-wrap{display:grid;place-items:center;min-height:80vh;padding:16px}
+    .auth{max-width:420px;width:100%}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+    input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1220;color:var(--text)}
+    label{color:#cbd5e1;font-size:.9rem}
+    .muted{color:var(--muted);font-size:.9rem}
+    .hidden{display:none !important}
+    .badge{padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.25);font-size:.75rem;color:#cbd5e1}
+    .toast{position:fixed;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;background:#111827;border:1px solid rgba(148,163,184,.2)}
+  </style>
 </head>
 <body>
-
-  <!-- En-tête -->
-  <header class="topbar">
-    <h1>Calendrier Médical</h1>
-    <button id="open-signup" class="btn btn-primary" type="button">Créer un compte</button>
-  </header>
-
-  <!-- ===== Connexion ===== -->
-  <main id="auth" class="auth">
-    <div class="card">
-      <h2>Connexion</h2>
-      <input id="li-email" class="input" type="email" placeholder="Email" autocomplete="email">
-      <input id="li-password" class="input" type="password" placeholder="Mot de passe" autocomplete="current-password">
-      <button id="btn-login" class="btn btn-fill" type="button">Se connecter</button>
-      <p id="auth-error" class="err"></p>
-    </div>
-  </main>
-
-  <!-- ===== Modale - Création de compte ===== -->
-  <div id="signup-modal" class="modal" aria-hidden="true">
-    <div class="modal__content">
-      <button id="close-signup" class="modal__close" type="button" aria-label="Fermer">&times;</button>
-      <h3 class="modal__title">Créer un compte</h3>
-      <input id="su-email" class="input" type="email" placeholder="Email (nouveau compte)" autocomplete="email">
-      <input id="su-password" class="input" type="password" placeholder="Mot de passe (≥ 6 caractères)" autocomplete="new-password">
-      <button id="btn-signup" class="btn btn-fill" type="button">Créer un compte</button>
-    </div>
-  </div>
-
-  <!-- ===== App ===== -->
-  <div id="app" class="app">
-    <button id="logoutButton" class="btn" type="button">Se déconnecter</button>
-    <button id="stopButton" class="btn danger" type="button" onclick="stopAlarm()" style="display:none">Arrêter l'alarme</button>
-
-    <!-- Alerte -->
-    <div id="custom-alert" class="overlay" style="display:none">
-      <div class="card" style="max-width:320px">
-        <p id="alert-message" style="margin:0 0 10px"></p>
-        <button id="closeAlertBtn" class="btn btn-fill" type="button">Fermer</button>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <img src="/logoalarm-192.png" alt="AN" />
+        <span>Calendrier AN</span>
+        <span id="auth-badge" class="badge hidden">Déconnecté</span>
       </div>
+      <nav class="menu">
+        <a href="#/" class="btn">Accueil</a>
+        <a href="#/rendezvous" class="btn">Rendez‑vous</a>
+        <a href="#/profil" class="btn">Profil</a>
+        <button id="logoutBtn" class="btn danger hidden">Se déconnecter</button>
+        <a href="#/auth" id="loginBtn" class="btn primary hidden">Se connecter</a>
+      </nav>
     </div>
-
-    <h2 class="section-title">Rappels médicaux</h2>
-
-    <div class="card big">
-      <div class="calendar-nav">
-        <button type="button" class="btn" onclick="changeMonth(-1)">Mois précédent</button>
-        <strong id="month-year"></strong>
-        <button type="button" class="btn" onclick="changeMonth(1)">Mois suivant</button>
-      </div>
-
-      <div id="calendar" class="calendar"></div>
-
-      <div class="editor">
-        <p>Date sélectionnée : <strong id="selected-date">Aucune</strong></p>
-        <textarea id="calendar-note" class="input" placeholder="Écrire un rappel pour cette date..."></textarea>
-
-        <!-- step=60 pour minutes entières -->
-        <input id="calendar-time" class="input" type="time" step="60">
-
-        <div class="actions">
-          <button id="startButton" class="btn" type="button" onclick="startApp()">Continuer</button>
-          <!-- IMPORTANT: id=saveButton pour que le JS puisse le cacher/afficher -->
-          <button id="saveButton" class="btn btn-fill" type="button" onclick="saveCalendarNote()">Sauvegarder</button>
-          <span id="calendar-msg" class="savemsg" style="display:none">Rappel sauvegardé !</span>
+  </header>  <main class="container">
+    <!-- AUTH PAGE -->
+    <section id="page-auth" class="auth-wrap hidden">
+      <div class="card auth">
+        <h1>Créer un compte</h1>
+        <p class="muted">Inscris‑toi pour accéder à ton calendrier.</p>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="ex: vous@mail.com" />
         </div>
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input id="password" type="password" placeholder="••••••••" />
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button id="signup" class="btn primary">S'inscrire</button>
+          <button id="signin" class="btn">Se connecter</button>
+        </div>
+        <p class="muted" style="margin-top:10px">En continuant, tu acceptes nos conditions.</p>
       </div>
-    </div>
-
-    <audio id="alarmSound" src="mario_theme.mp3" preload="auto"></audio>
+    </section><!-- HOME PAGE -->
+<section id="page-home" class="grid cols-2 hidden">
+  <div class="card">
+    <h2>Bienvenue 👋</h2>
+    <p>Tu es connecté. Ici on mettra le <strong>résumé des rendez‑vous</strong>, notifications, et actions rapides.</p>
   </div>
+  <div class="card">
+    <h2>Prochaines actions</h2>
+    <ul>
+      <li>Ajouter un rendez‑vous</li>
+      <li>Importer depuis Google Calendar (à venir)</li>
+      <li>Activer les notifications PWA (à venir)</li>
+    </ul>
+  </div>
+</section>
 
-  <!-- ===== Firebase expose auth & db ===== -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-    import { getFirestore }  from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+<!-- RDV PAGE -->
+<section id="page-rdv" class="hidden">
+  <div class="card">
+    <h2>Rendez‑vous</h2>
+    <p class="muted">Ici tu géreras la liste des RDV. (CRUD avec Firestore – à brancher)</p>
+  </div>
+</section>
 
+<!-- PROFIL PAGE -->
+<section id="page-profil" class="hidden">
+  <div class="card">
+    <h2>Profil</h2>
+    <p class="muted">Email: <span id="profil-email">—</span></p>
+  </div>
+</section>
+
+  </main>  <footer>
+    <div class="container">
+      © <span id="year"></span> Calendrier AN — Tous droits réservés
+    </div>
+  </footer>  <div id="toast" class="toast hidden"></div>  <!-- Firebase (compat) -->  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>  <script type="module">
+    // TODO: remplace par ta config Firebase
     const firebaseConfig = {
-      apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
-      authDomain: "productvues.firebaseapp.com",
-      projectId: "productvues",
-      storageBucket: "productvues.firebasestorage.app",
-      messagingSenderId: "268641672431",
-      appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
+      apiKey: "REPLACE_ME",
+      authDomain: "REPLACE_ME.firebaseapp.com",
+      projectId: "REPLACE_ME",
+      appId: "REPLACE_ME"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-    // Expose global
-    window.auth = auth;
-    window.db   = db;
-    window.dispatchEvent(new Event('firebase-ready'));
+    // Elements
+    const pageAuth   = document.getElementById('page-auth');
+    const pageHome   = document.getElementById('page-home');
+    const pageRDV    = document.getElementById('page-rdv');
+    const pageProfil = document.getElementById('page-profil');
+    const loginBtn   = document.getElementById('loginBtn');
+    const logoutBtn  = document.getElementById('logoutBtn');
+    const badge      = document.getElementById('auth-badge');
+    const emailEl    = document.getElementById('email');
+    const passEl     = document.getElementById('password');
+    const toast      = document.getElementById('toast');
 
-    // Cache le bouton "Créer un compte" si déjà connecté
-    const signupBtn   = document.getElementById('open-signup');
-    const signupModal = document.getElementById('signup-modal');
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        signupBtn.classList.add('hidden');
-        if (signupModal.style.display === 'block') {
-          signupModal.style.display = 'none';
-          signupModal.setAttribute('aria-hidden','true');
-        }
-      } else {
-        signupBtn.classList.remove('hidden');
-      }
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Simple router
+    const routes = {
+      '#/': () => show(auth.currentUser ? 'home' : 'auth'),
+      '#/auth': () => show('auth'),
+      '#/rendezvous': () => guard(() => show('rdv')),
+      '#/profil': () => guard(() => show('profil')),
+    };
+
+    function guard(fn){
+      if(!auth.currentUser){ location.hash = '#/auth'; notify('Connecte‑toi pour continuer'); return; }
+      fn();
+    }
+
+    function show(page){
+      [pageAuth,pageHome,pageRDV,pageProfil].forEach(s=>s.classList.add('hidden'));
+      if(page==='auth') pageAuth.classList.remove('hidden');
+      if(page==='home') pageHome.classList.remove('hidden');
+      if(page==='rdv') pageRDV.classList.remove('hidden');
+      if(page==='profil') pageProfil.classList.remove('hidden');
+      loginBtn.classList.toggle('hidden', !!auth.currentUser);
+      logoutBtn.classList.toggle('hidden', !auth.currentUser);
+      badge.textContent = auth.currentUser? 'Connecté' : 'Déconnecté';
+      badge.classList.remove('hidden');
+      document.getElementById('profil-email').textContent = auth.currentUser?.email || '—';
+    }
+
+    function notify(msg){
+      toast.textContent = msg; toast.classList.remove('hidden');
+      setTimeout(()=>toast.classList.add('hidden'), 2200);
+    }
+
+    // Auth actions
+    document.getElementById('signup').addEventListener('click', async ()=>{
+      const email = emailEl.value.trim();
+      const pass  = passEl.value.trim();
+      try{ await auth.createUserWithEmailAndPassword(email, pass); notify('Compte créé, bienvenue !'); location.hash = '#/'; }
+      catch(e){ notify(e.message); }
     });
-  </script>
 
-  <!-- Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('./firebase-messaging-sw.js')
-        .catch(err => console.error('SW erreur :', err));
-    }
-  </script>
-<script type="module">
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    document.getElementById('signin').addEventListener('click', async ()=>{
+      const email = emailEl.value.trim();
+      const pass  = passEl.value.trim();
+      try{ await auth.signInWithEmailAndPassword(email, pass); notify('Connexion réussie'); location.hash = '#/'; }
+      catch(e){ notify(e.message); }
+    });
 
-  // réutilise les instances exposées par index.html
-  const auth = window.auth;
-  const db   = window.db;
+    logoutBtn.addEventListener('click', async ()=>{ await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth'; });
 
-  // 1) Assure-toi que le SW est prêt
-  const reg = await navigator.serviceWorker.ready;
+    // Handle auth state + routing
+    auth.onAuthStateChanged(()=>{ const h = location.hash || '#/'; (routes[h]||routes['#/'])(); });
+    window.addEventListener('hashchange', ()=>{ const h = location.hash || '#/'; (routes[h]||routes['#/'])(); });
 
-  // 2) Instancie messaging
-  const messaging = getMessaging();
-
-  // 3) Quand l’utilisateur est connecté, enregistre le token FCM
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) return;
-
-    // Demande permission si nécessaire
-    if (Notification.permission === "default") {
-      await Notification.requestPermission();
-    }
-    if (Notification.permission !== "granted") return;
-
-    try {
-      const token = await getToken(messaging, {
-        vapidKey: "BFSgNk48tjDovjdm0D9tVqKpNj80K9ko-8Ljw4cQDibk1n4tml42EQUywI4L26-GWWB_9UcEporrMRx_-9L1m-0",
-        serviceWorkerRegistration: reg
-      });
-      if (token) {
-        await setDoc(
-          doc(db, "users", user.uid, "fcmTokens", token),
-          { active: true, createdAt: serverTimestamp() },
-          { merge: true }
-        );
-        console.log("FCM token enregistré");
-      }
-    } catch (e) {
-      console.warn("FCM getToken error:", e);
-    }
-  });
-
-  // (optionnel) quand une notif arrive pendant que la page est OUVERTE
-  onMessage(messaging, (payload) => {
-    console.log("Push reçu en avant-plan:", payload);
-  });
-</script>
-  <!-- App -->
-  <script src="scripte.js"></script>
-</body>
+    // First load
+    (routes[location.hash] || routes['#/'])();
+  </script></body>
 </html>
