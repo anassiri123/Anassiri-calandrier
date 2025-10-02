@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -8,8 +7,9 @@
   <link rel="icon" href="/logoalarm-192.png" />
   <meta name="theme-color" content="#0f172a" />
   <style>
-    :root{--bg:#0f172a;--card:#111827;--muted:#6b7280;--accent:#2563eb;--text:#e5e7eb;--ok:#16a34a;--danger:#ef4444}
-    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b1220;color:var(--text)}
+    :root{--bg:#0f172a;--card:#111827;--muted:#6b7280;--accent:#2563eb;--text:#e5e7eb}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b1220;color:var(--text)}
     a{color:inherit;text-decoration:none}
     .container{max-width:1100px;margin:0 auto;padding:16px}
     header{position:sticky;top:0;backdrop-filter:blur(6px);background:rgba(2,6,23,.7);border-bottom:1px solid rgba(148,163,184,.15);z-index:50}
@@ -26,14 +26,13 @@
     .grid{display:grid;gap:16px}
     @media(min-width:768px){.grid.cols-2{grid-template-columns:1fr 1fr}}
     footer{border-top:1px solid rgba(148,163,184,.15);padding:24px 0;color:var(--muted)}
-    /* AUTH */
     .auth-wrap{display:grid;place-items:center;min-height:80vh;padding:16px}
     .auth{max-width:420px;width:100%}
     .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
     input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1220;color:var(--text)}
     label{color:#cbd5e1;font-size:.9rem}
     .muted{color:var(--muted);font-size:.9rem}
-    .hidden{display:none !important}
+    .hidden{display:none!important}
     .badge{padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.25);font-size:.75rem;color:#cbd5e1}
     .toast{position:fixed;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;background:#111827;border:1px solid rgba(148,163,184,.2)}
   </style>
@@ -48,18 +47,20 @@
       </div>
       <nav class="menu">
         <a href="#/" class="btn">Accueil</a>
-        <a href="#/rendezvous" class="btn">Rendez‑vous</a>
+        <a href="#/rendezvous" class="btn">Rendez-vous</a>
         <a href="#/profil" class="btn">Profil</a>
         <button id="logoutBtn" class="btn danger hidden">Se déconnecter</button>
         <a href="#/auth" id="loginBtn" class="btn primary hidden">Se connecter</a>
       </nav>
     </div>
-  </header>  <main class="container">
-    <!-- AUTH PAGE -->
+  </header>
+
+  <main class="container">
+    <!-- PAGE AUTH -->
     <section id="page-auth" class="auth-wrap hidden">
       <div class="card auth">
         <h1>Créer un compte</h1>
-        <p class="muted">Inscris‑toi pour accéder à ton calendrier.</p>
+        <p class="muted">Inscris-toi pour accéder à ton calendrier.</p>
         <div class="field">
           <label for="email">Email</label>
           <input id="email" type="email" placeholder="ex: vous@mail.com" />
@@ -72,71 +73,92 @@
           <button id="signup" class="btn primary">S'inscrire</button>
           <button id="signin" class="btn">Se connecter</button>
         </div>
-        <p class="muted" style="margin-top:10px">En continuant, tu acceptes nos conditions.</p>
       </div>
-    </section><!-- HOME PAGE -->
-<section id="page-home" class="grid cols-2 hidden">
-  <div class="card">
-    <h2>Bienvenue 👋</h2>
-    <p>Tu es connecté. Ici on mettra le <strong>résumé des rendez‑vous</strong>, notifications, et actions rapides.</p>
-  </div>
-  <div class="card">
-    <h2>Prochaines actions</h2>
-    <ul>
-      <li>Ajouter un rendez‑vous</li>
-      <li>Importer depuis Google Calendar (à venir)</li>
-      <li>Activer les notifications PWA (à venir)</li>
-    </ul>
-  </div>
-</section>
+    </section>
 
-<!-- RDV PAGE -->
-<section id="page-rdv" class="hidden">
-  <div class="card">
-    <h2>Rendez‑vous</h2>
-    <p class="muted">Ici tu géreras la liste des RDV. (CRUD avec Firestore – à brancher)</p>
-  </div>
-</section>
+    <!-- PAGE ACCUEIL -->
+    <section id="page-home" class="grid cols-2 hidden">
+      <div class="card">
+        <h2>Bienvenue 👋</h2>
+        <p>Tu es connecté. Ici on mettra ton <strong>résumé de rendez-vous</strong> et actions rapides.</p>
+      </div>
+      <div class="card">
+        <h2>Prochaines actions</h2>
+        <ul>
+          <li>Ajouter un rendez-vous</li>
+          <li>Importer depuis Google Calendar (à venir)</li>
+          <li>Activer les notifications (à venir)</li>
+        </ul>
+      </div>
+    </section>
 
-<!-- PROFIL PAGE -->
-<section id="page-profil" class="hidden">
-  <div class="card">
-    <h2>Profil</h2>
-    <p class="muted">Email: <span id="profil-email">—</span></p>
-  </div>
-</section>
+    <!-- PAGE RDV -->
+    <section id="page-rdv" class="hidden">
+      <div class="card">
+        <h2>Rendez-vous</h2>
+        <p class="muted">Bientôt ici la gestion complète (Firestore CRUD)</p>
+      </div>
+    </section>
 
-  </main>  <footer>
+    <!-- PAGE PROFIL -->
+    <section id="page-profil" class="hidden">
+      <div class="card">
+        <h2>Profil</h2>
+        <p>Email : <span id="profil-email">—</span></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
     <div class="container">
       © <span id="year"></span> Calendrier AN — Tous droits réservés
     </div>
-  </footer>  <div id="toast" class="toast hidden"></div>  <!-- Firebase (compat) -->  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>  <script type="module">
-    // TODO: remplace par ta config Firebase
-    const firebaseConfig = {
-      apiKey: "REPLACE_ME",
-      authDomain: "REPLACE_ME.firebaseapp.com",
-      projectId: "REPLACE_ME",
-      appId: "REPLACE_ME"
-    };
+  </footer>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
+    authDomain: "productvues.firebaseapp.com",
+    projectId: "productvues",
+    storageBucket: "productvues.firebasestorage.app",
+    messagingSenderId: "268641672431",
+    appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
+    // 🔹 FIN DE LA CONFIG FIREBASE 👆
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
     // Elements
-    const pageAuth   = document.getElementById('page-auth');
-    const pageHome   = document.getElementById('page-home');
-    const pageRDV    = document.getElementById('page-rdv');
+    const pageAuth = document.getElementById('page-auth');
+    const pageHome = document.getElementById('page-home');
+    const pageRDV = document.getElementById('page-rdv');
     const pageProfil = document.getElementById('page-profil');
-    const loginBtn   = document.getElementById('loginBtn');
-    const logoutBtn  = document.getElementById('logoutBtn');
-    const badge      = document.getElementById('auth-badge');
-    const emailEl    = document.getElementById('email');
-    const passEl     = document.getElementById('password');
-    const toast      = document.getElementById('toast');
-
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const badge = document.getElementById('auth-badge');
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const toast = document.getElementById('toast');
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Simple router
+    // Router simple
     const routes = {
       '#/': () => show(auth.currentUser ? 'home' : 'auth'),
       '#/auth': () => show('auth'),
@@ -145,7 +167,7 @@
     };
 
     function guard(fn){
-      if(!auth.currentUser){ location.hash = '#/auth'; notify('Connecte‑toi pour continuer'); return; }
+      if(!auth.currentUser){ location.hash = '#/auth'; notify('Connecte-toi'); return; }
       fn();
     }
 
@@ -157,7 +179,7 @@
       if(page==='profil') pageProfil.classList.remove('hidden');
       loginBtn.classList.toggle('hidden', !!auth.currentUser);
       logoutBtn.classList.toggle('hidden', !auth.currentUser);
-      badge.textContent = auth.currentUser? 'Connecté' : 'Déconnecté';
+      badge.textContent = auth.currentUser ? 'Connecté' : 'Déconnecté';
       badge.classList.remove('hidden');
       document.getElementById('profil-email').textContent = auth.currentUser?.email || '—';
     }
@@ -171,7 +193,7 @@
     document.getElementById('signup').addEventListener('click', async ()=>{
       const email = emailEl.value.trim();
       const pass  = passEl.value.trim();
-      try{ await auth.createUserWithEmailAndPassword(email, pass); notify('Compte créé, bienvenue !'); location.hash = '#/'; }
+      try{ await auth.createUserWithEmailAndPassword(email, pass); notify('Compte créé !'); location.hash = '#/'; }
       catch(e){ notify(e.message); }
     });
 
@@ -184,11 +206,10 @@
 
     logoutBtn.addEventListener('click', async ()=>{ await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth'; });
 
-    // Handle auth state + routing
+    // Handle state + routing
     auth.onAuthStateChanged(()=>{ const h = location.hash || '#/'; (routes[h]||routes['#/'])(); });
     window.addEventListener('hashchange', ()=>{ const h = location.hash || '#/'; (routes[h]||routes['#/'])(); });
-
-    // First load
     (routes[location.hash] || routes['#/'])();
-  </script></body>
+  </script>
+</body>
 </html>
