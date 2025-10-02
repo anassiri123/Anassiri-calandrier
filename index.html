@@ -12,11 +12,7 @@
   <style>
     :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --accent:#2563eb; --text:#e5e7eb; }
     *{box-sizing:border-box}
-    html, body {
-      margin:0; padding:0; height:100%;
-      font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif;
-      background:#0b1220; color:var(--text); overflow-x:hidden;
-    }
+    html, body { margin:0; padding:0; height:100%; background:#0b1220; color:var(--text); font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif; overflow-x:hidden; }
     a{text-decoration:none;color:inherit}
     .container{max-width:1100px;margin:0 auto;padding:16px}
 
@@ -36,8 +32,10 @@
 
     /* AUTH FIXE */
     .auth-wrap{position:fixed;inset:0;display:grid;place-items:center;background:#0b1220;overflow:hidden;z-index:40}
-    .auth{width:90%;max-width:420px;background:var(--card);border-radius:16px;padding:24px;text-align:center;animation:fadeIn .4s ease-out}
+    .auth{width:90%;max-width:440px;background:var(--card);border-radius:16px;padding:24px;text-align:center;animation:fadeIn .4s ease-out}
     @keyframes fadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    .row{display:grid;gap:10px}
+    @media(min-width:520px){.row.two{grid-template-columns:1fr 1fr}}
     .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:left}
     input{padding:12px 14px;border-radius:10px;border:1px solid rgba(148,163,184,.25);background:#0b1220;color:var(--text)}
     input:focus{border-color:var(--accent);outline:none}
@@ -75,19 +73,46 @@
         <h1>Créer un compte</h1>
         <p class="subtitle">Inscris-toi puis <strong>vérifie ton email</strong> pour activer l’accès.</p>
 
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" type="email" placeholder="ex: vous@mail.com" autocomplete="email" />
-        </div>
-        <div class="field">
-          <label for="password">Mot de passe</label>
-          <input id="password" type="password" placeholder="Au moins 6 caractères" autocomplete="current-password" />
-        </div>
+        <!-- Formulaire d'inscription -->
+        <form id="form-signup" novalidate>
+          <div class="row two">
+            <div class="field">
+              <label for="first">Prénom</label>
+              <input id="first" autocomplete="given-name" placeholder="ex: Adam" />
+            </div>
+            <div class="field">
+              <label for="last">Nom</label>
+              <input id="last" autocomplete="family-name" placeholder="ex: Nassiri" />
+            </div>
+          </div>
 
-        <button id="signup" class="btn primary full" type="button">S’inscrire</button>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="ex: vous@mail.com" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="password">Mot de passe</label>
+            <input id="password" type="password" placeholder="Au moins 6 caractères" autocomplete="new-password" />
+          </div>
+
+          <button class="btn primary full" type="submit">S’inscrire</button>
+        </form>
+
         <div class="sep"></div>
         <p class="subtitle">Déjà inscrit ?</p>
-        <button id="signin" class="link" type="button">Se connecter</button>
+
+        <!-- Formulaire de connexion -->
+        <form id="form-signin" novalidate>
+          <div class="field">
+            <label for="email2">Email</label>
+            <input id="email2" type="email" placeholder="ex: vous@mail.com" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="password2">Mot de passe</label>
+            <input id="password2" type="password" placeholder="Votre mot de passe" autocomplete="current-password" />
+          </div>
+          <button class="btn full" type="submit">Se connecter</button>
+        </form>
       </div>
     </section>
 
@@ -111,6 +136,7 @@
     <section id="page-profil" class="hidden">
       <div class="card">
         <h2>Profil</h2>
+        <p>Nom : <span id="profil-name">—</span></p>
         <p>Email : <span id="profil-email">—</span></p>
       </div>
     </section>
@@ -129,13 +155,7 @@
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
 
   <script>
-    // ===== Sécurité : catch erreurs JS globales =====
-    window.addEventListener('error', (e)=>{
-      console.error('Erreur globale:', e.error || e.message);
-      try{ notify('Erreur: ' + (e.error?.message || e.message)); }catch{ alert('Erreur: ' + (e.error?.message || e.message)); }
-    });
-
-    // ===== Config Firebase =====
+    // ============ CONFIG FIREBASE ============
     const firebaseConfig = {
       apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
       authDomain: "productvues.firebaseapp.com",
@@ -144,12 +164,12 @@
       messagingSenderId: "268641672431",
       appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn('setPersistence:',err?.message));
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+    // ========================================
 
-    // ===== DOM =====
+    // DOM
     const pageAuth = document.getElementById('page-auth');
     const pageHome = document.getElementById('page-home');
     const pageRDV  = document.getElementById('page-rdv');
@@ -157,26 +177,31 @@
     const navMenu = document.getElementById('navMenu');
     const brandText = document.getElementById('brandText');
     const badge = document.getElementById('auth-badge');
-    const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
-    const emailEl = document.getElementById('email');
-    const passEl  = document.getElementById('password');
-    const toast   = document.getElementById('toast');
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ===== Router =====
+    // Helpers UI
+    function notify(msg){
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(()=>toast.classList.add('hidden'), 3500);
+    }
+    const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    const clean = s => (s||'').trim();
+
+    // Router
     const routes = {
       '#/': () => show(auth.currentUser ? 'home' : 'auth'),
       '#/auth': () => show('auth'),
       '#/rendezvous': () => guard(() => show('rdv')),
-      '#/profil': () => guard(() => show('profil'))
+      '#/profil': () => guard(() => show('profil')),
     };
     function guard(fn){ if(!auth.currentUser){ location.hash='#/auth'; notify('Connecte-toi'); return; } fn(); }
     function route(){ const h = location.hash || '#/'; (routes[h] || routes['#/'])(); }
     auth.onAuthStateChanged(()=>{ route(); });
     window.addEventListener('hashchange', route);
 
-    // ===== Affichage =====
     function show(page){
       [pageAuth,pageHome,pageRDV,pageProfil].forEach(p=>p.classList.add('hidden'));
       if(page==='auth')   pageAuth.classList.remove('hidden');
@@ -185,70 +210,71 @@
       if(page==='profil') pageProfil.classList.remove('hidden');
 
       const onAuth = page==='auth';
-      navMenu.classList.toggle('hidden', onAuth);
+      document.getElementById('navMenu').classList.toggle('hidden', onAuth);
       brandText.classList.toggle('hidden', onAuth);
       badge.classList.toggle('hidden', onAuth || !auth.currentUser);
-
-      const showHeaderLogin = !auth.currentUser && !onAuth;
-      loginBtn.classList.toggle('hidden', !showHeaderLogin);
       logoutBtn.classList.toggle('hidden', !auth.currentUser);
 
-      document.getElementById('profil-email').textContent = auth.currentUser?.email || '—';
+      // Profil
+      const u = auth.currentUser;
+      document.getElementById('profil-name').textContent = u?.displayName || '—';
+      document.getElementById('profil-email').textContent = u?.email || '—';
     }
 
-    // ===== UI helpers =====
-    function notify(msg){
-      console.log('Toast:', msg);
-      if(!toast) { alert(msg); return; }
-      toast.textContent = msg;
-      toast.classList.remove('hidden');
-      setTimeout(()=>toast.classList.add('hidden'), 3000);
-    }
-    const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    // ======== INSCRIPTION (avec Nom/Prénom + vérif email) ========
+    document.getElementById('form-signup').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const first = clean(document.getElementById('first').value);
+      const last  = clean(document.getElementById('last').value);
+      const email = clean(document.getElementById('email').value);
+      const pass  = clean(document.getElementById('password').value);
 
-    // ===== Handlers =====
-    document.getElementById('signup').addEventListener('click', async ()=>{
-      const email = emailEl.value.trim();
-      const pass  = passEl.value.trim();
-      if(!emailOk(email)) { notify("Email invalide."); return; }
-      if(pass.length < 6)  { notify("Mot de passe trop court (min 6)."); return; }
+      if(!first || !last){ notify('Merci de saisir votre nom et prénom.'); return; }
+      if(!emailOk(email)){ notify('Email invalide.'); return; }
+      if(pass.length < 6){ notify('Mot de passe trop court (min 6).'); return; }
+
       try{
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
-        try{ await cred.user.sendEmailVerification(); } catch(e){ console.warn('sendEmailVerification:', e?.message); }
-        notify("Vérifie ta boîte mail pour activer ton compte.");
-        await auth.signOut();             // 🔒 bloque l’accès tant que non vérifié
+        try{ await cred.user.updateProfile({ displayName: `${first} ${last}` }); }catch{}
+        try{ await cred.user.sendEmailVerification(); }catch{}
+        notify('Compte créé. Vérifie ton email pour activer l’accès.');
+        await auth.signOut();   // bloque l’accès tant que non vérifié
         location.hash = '#/auth';
       }catch(e){
-        console.error('signup:', e);
-        if(e.code==='auth/email-already-in-use') notify("Email déjà utilisé.");
-        else if(e.code==='auth/operation-not-allowed') notify("Active la méthode Email/Mot de passe dans Firebase.");
-        else notify(e.message || "Erreur à l'inscription.");
+        if(e.code==='auth/email-already-in-use') notify('Email déjà utilisé.');
+        else if(e.code==='auth/operation-not-allowed') notify('Active Email/Mot de passe dans Firebase.');
+        else notify(e.message || 'Erreur à l’inscription.');
       }
     });
 
-    document.getElementById('signin').addEventListener('click', async ()=>{
-      const email = emailEl.value.trim();
-      const pass  = passEl.value.trim();
+    // ======== CONNEXION (refuse si email non vérifié) ========
+    document.getElementById('form-signin').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = clean(document.getElementById('email2').value);
+      const pass  = clean(document.getElementById('password2').value);
+      if(!emailOk(email)){ notify('Email invalide.'); return; }
+      if(!pass){ notify('Saisis ton mot de passe.'); return; }
+
       try{
         const cred = await auth.signInWithEmailAndPassword(email, pass);
         if(!cred.user.emailVerified){
-          try{ await cred.user.sendEmailVerification(); } catch(e){ console.warn('resend verify:', e?.message); }
-          notify("Email non vérifié. Clique sur le lien reçu par email.");
-          await auth.signOut();           // 🔒 reste bloqué
+          try{ await cred.user.sendEmailVerification(); }catch{}
+          notify('Email non vérifié. Clique sur le lien reçu par email.');
+          await auth.signOut();
           return;
         }
         notify('Connexion réussie'); location.hash = '#/';
       }catch(e){
-        console.error('signin:', e);
-        if(e.code==='auth/user-not-found') notify("Compte introuvable.");
-        else if(e.code==='auth/wrong-password') notify("Mot de passe incorrect.");
-        else if(e.code==='auth/unauthorized-domain') notify("Domaine non autorisé dans Firebase.");
-        else if(e.code==='auth/operation-not-allowed') notify("Active la méthode Email/Mot de passe dans Firebase.");
-        else notify(e.message || "Erreur à la connexion.");
+        if(e.code==='auth/user-not-found') notify('Compte introuvable.');
+        else if(e.code==='auth/wrong-password') notify('Mot de passe incorrect.');
+        else if(e.code==='auth/unauthorized-domain') notify('Ajoute ton domaine dans Firebase > Auth > Domaines autorisés.');
+        else if(e.code==='auth/operation-not-allowed') notify('Active Email/Mot de passe dans Firebase.');
+        else notify(e.message || 'Erreur à la connexion.');
       }
     });
 
-    logoutBtn.addEventListener('click', async ()=>{
+    // Déconnexion
+    document.getElementById('logoutBtn').addEventListener('click', async ()=>{
       await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth';
     });
   </script>
