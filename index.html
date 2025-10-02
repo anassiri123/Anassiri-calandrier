@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Test déploiement Firebase -->
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -12,34 +11,43 @@
   <meta name="theme-color" content="#0f172a" />
 
   <style>
-    :root{--bg:#0f172a;--card:#111827;--muted:#6b7280;--accent:#2563eb;--text:#e5e7eb}
+    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--accent:#2563eb;--text:#e5e7eb}
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b1220;color:var(--text)}
     a{color:inherit;text-decoration:none}
     .container{max-width:1100px;margin:0 auto;padding:16px}
-    header{position:sticky;top:0;backdrop-filter:blur(6px);background:rgba(2,6,23,.7);border-bottom:1px solid rgba(148,163,184,.15);z-index:50}
+    header{position:sticky;top:0;backdrop-filter:blur(8px);background:rgba(2,6,23,.7);border-bottom:1px solid rgba(148,163,184,.15);z-index:50}
     .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 0}
     .brand{display:flex;align-items:center;gap:10px;font-weight:700}
     .brand img{width:34px;height:34px;border-radius:9px}
     .menu{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{padding:10px 14px;border-radius:12px;background:#0b1220;border:1px solid rgba(148,163,184,.2);cursor:pointer;color:var(--text)}
-    .btn:hover{border-color:rgba(148,163,184,.45)}
+    .btn{padding:10px 14px;border-radius:12px;background:#0b1220;border:1px solid rgba(148,163,184,.25);cursor:pointer;color:var(--text);transition:.15s}
+    .btn:hover{border-color:rgba(148,163,184,.45);transform:translateY(-1px)}
     .btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+    .btn.ghost{background:transparent;border-color:transparent}
     .btn.danger{background:transparent;border-color:rgba(239,68,68,.5);color:#fecaca}
     main{min-height:65vh}
-    .card{background:linear-gradient(180deg,rgba(17,24,39,.85),rgba(2,6,23,.7));border:1px solid rgba(148,163,184,.15);border-radius:16px;padding:18px}
+    .card{background:linear-gradient(180deg,rgba(17,24,39,.9),rgba(2,6,23,.7));border:1px solid rgba(148,163,184,.15);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
     .grid{display:grid;gap:16px}
     @media(min-width:768px){.grid.cols-2{grid-template-columns:1fr 1fr}}
     footer{border-top:1px solid rgba(148,163,184,.15);padding:24px 0;color:var(--muted)}
+    /* AUTH */
     .auth-wrap{display:grid;place-items:center;min-height:80vh;padding:16px}
-    .auth{max-width:420px;width:100%}
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-    input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1220;color:var(--text)}
+    .auth{max-width:440px;width:100%}
+    .auth h1{margin:0 0 6px 0}
+    .subtitle{margin:0 0 18px 0;color:var(--muted)}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+    input{width:100%;padding:14px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1220;color:var(--text);outline:none}
+    input:focus{border-color:var(--accent)}
     label{color:#cbd5e1;font-size:.9rem}
     .muted{color:var(--muted);font-size:.9rem}
     .hidden{display:none!important}
     .badge{padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.25);font-size:.75rem;color:#cbd5e1}
     .toast{position:fixed;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;background:#111827;border:1px solid rgba(148,163,184,.2)}
+    .wfull{width:100%}
+    .center{text-align:center}
+    .link{background:transparent;border:none;padding:6px 0;color:#93c5fd;text-decoration:underline;cursor:pointer}
+    .sep{height:1px;background:rgba(148,163,184,.15);margin:14px 0}
     /* Écran de boot pour éviter le flash */
     .boot{position:fixed;inset:0;display:grid;place-items:center;background:#0b1220;z-index:60}
   </style>
@@ -63,23 +71,27 @@
   </header>
 
   <main class="container">
-    <!-- PAGE AUTH -->
+    <!-- PAGE AUTH (pro, un seul bouton principal) -->
     <section id="page-auth" class="auth-wrap hidden">
       <div class="card auth">
         <h1>Créer un compte</h1>
-        <p class="muted">Inscris-toi pour accéder à ton calendrier.</p>
+        <p class="subtitle">Inscris-toi pour accéder à ton calendrier.</p>
+
         <div class="field">
           <label for="email">Email</label>
-          <input id="email" type="email" placeholder="ex: vous@mail.com" />
+          <input id="email" type="email" placeholder="ex: vous@mail.com" autocomplete="email" />
         </div>
         <div class="field">
           <label for="password">Mot de passe</label>
-          <input id="password" type="password" placeholder="••••••••" />
+          <input id="password" type="password" placeholder="Au moins 6 caractères" autocomplete="current-password" />
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button id="signup" class="btn primary">S'inscrire</button>
-          <button id="signin" class="btn">Se connecter</button>
-        </div>
+
+        <button id="signup" class="btn primary wfull">S’inscrire</button>
+
+        <div class="sep"></div>
+
+        <p class="center muted">Déjà un compte ?</p>
+        <button id="signin" class="link">Se connecter</button>
       </div>
     </section>
 
@@ -145,7 +157,7 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // (optionnel) Persistance locale explicite
+    // Persistance locale
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
     // Elements
@@ -181,7 +193,11 @@
       if(page==='home')   pageHome.classList.remove('hidden');
       if(page==='rdv')    pageRDV.classList.remove('hidden');
       if(page==='profil') pageProfil.classList.remove('hidden');
-      loginBtn.classList.toggle('hidden', !!auth.currentUser);
+
+      // ✅ Plus de doublon : cache le bouton header "Se connecter" sur la page d’auth
+      const shouldShowHeaderLogin = !auth.currentUser && page !== 'auth';
+      loginBtn.classList.toggle('hidden', !shouldShowHeaderLogin);
+
       logoutBtn.classList.toggle('hidden', !auth.currentUser);
       badge.textContent = auth.currentUser ? 'Connecté' : 'Déconnecté';
       badge.classList.remove('hidden');
@@ -197,26 +213,30 @@
     document.getElementById('signup').addEventListener('click', async ()=>{
       const email = emailEl.value.trim();
       const pass  = passEl.value.trim();
-      try{ await auth.createUserWithEmailAndPassword(email, pass); notify('Compte créé !'); location.hash = '#/'; }
-      catch(e){ notify(e.message); }
+      try{
+        await auth.createUserWithEmailAndPassword(email, pass);
+        notify('Compte créé !'); location.hash = '#/';
+      }catch(e){ notify(e.message); }
     });
 
     document.getElementById('signin').addEventListener('click', async ()=>{
       const email = emailEl.value.trim();
       const pass  = passEl.value.trim();
-      try{ await auth.signInWithEmailAndPassword(email, pass); notify('Connexion réussie'); location.hash = '#/'; }
-      catch(e){ notify(e.message); }
+      try{
+        await auth.signInWithEmailAndPassword(email, pass);
+        notify('Connexion réussie'); location.hash = '#/';
+      }catch(e){ notify(e.message); }
     });
 
     logoutBtn.addEventListener('click', async ()=>{
       await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth';
     });
 
-    // Routing UNIQUEMENT après la réponse de Firebase (évite le flash)
+    // Routing après la réponse de Firebase (pas de flash)
     function route(){ const h = location.hash || '#/'; (routes[h] || routes['#/'])(); }
 
     auth.onAuthStateChanged(()=>{
-      if (boot) boot.remove();  // retire l’écran de chargement
+      if (boot) boot.remove();
       route();
     });
 
