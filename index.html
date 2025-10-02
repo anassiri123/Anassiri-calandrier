@@ -5,60 +5,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calendrier AN — Accueil</title>
 
-  <!-- Icône & Manifest PWA -->
+  <!-- Icône & Manifest -->
   <link rel="icon" href="/logoalarm-192.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#0f172a" />
 
   <style>
-    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--accent:#2563eb;--text:#e5e7eb}
+    :root {
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8;
+      --accent:#2563eb; --text:#e5e7eb;
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b1220;color:var(--text)}
-    a{color:inherit;text-decoration:none}
+    html, body {
+      margin:0; padding:0;
+      font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif;
+      background:#0b1220; color:var(--text);
+      height:100%; overflow-x:hidden;
+    }
+    a{text-decoration:none;color:inherit}
     .container{max-width:1100px;margin:0 auto;padding:16px}
-    header{position:sticky;top:0;backdrop-filter:blur(8px);background:rgba(2,6,23,.7);border-bottom:1px solid rgba(148,163,184,.15);z-index:50}
-    .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 0}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-    .brand img{width:34px;height:34px;border-radius:9px}
-    .menu{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{padding:10px 14px;border-radius:12px;background:#0b1220;border:1px solid rgba(148,163,184,.25);cursor:pointer;transition:.15s;color:var(--text)}
-    .btn:hover{border-color:rgba(148,163,184,.45);transform:translateY(-1px)}
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:white}
-    .btn.ghost{background:transparent;border-color:transparent}
-    .btn.danger{background:transparent;border-color:rgba(239,68,68,.5);color:#fecaca}
-    main{min-height:65vh}
-    .card{background:linear-gradient(180deg,rgba(17,24,39,.9),rgba(2,6,23,.7));border:1px solid rgba(148,163,184,.15);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .grid{display:grid;gap:16px}
-    @media(min-width:768px){.grid.cols-2{grid-template-columns:1fr 1fr}}
-    footer{border-top:1px solid rgba(148,163,184,.15);padding:24px 0;color:var(--muted)}
-    /* AUTH */
-    .auth-wrap{display:grid;place-items:center;min-height:80vh;padding:16px}
-    .auth{max-width:440px;width:100%}
-    .auth h1{margin:0 0 6px 0}
-    .subtitle{margin:0 0 18px 0;color:var(--muted)}
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-    input{width:100%;padding:14px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1220;color:var(--text);outline:none}
-    input:focus{border-color:var(--accent)}
-    label{color:#cbd5e1;font-size:.9rem}
-    .muted{color:var(--muted);font-size:.9rem}
+
+    header {
+      position:sticky;top:0;backdrop-filter:blur(8px);
+      background:rgba(2,6,23,.7);
+      border-bottom:1px solid rgba(148,163,184,.15);
+      z-index:50;
+    }
+    .nav {
+      display:flex;align-items:center;
+      justify-content:space-between;padding:10px 0;
+    }
+    .brand {display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand img {width:38px;height:38px;border-radius:10px}
+    .menu {display:flex;gap:10px;flex-wrap:wrap}
+    .btn {
+      padding:10px 14px;border-radius:12px;background:#0b1220;
+      border:1px solid rgba(148,163,184,.25);cursor:pointer;
+      color:var(--text);transition:.15s;
+    }
+    .btn:hover {border-color:rgba(148,163,184,.45);transform:translateY(-1px)}
+    .btn.primary {background:var(--accent);border-color:var(--accent);color:#fff}
+    .btn.danger {border-color:#ef4444;color:#fecaca}
     .hidden{display:none!important}
-    .badge{padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.25);font-size:.75rem;color:#cbd5e1}
-    .toast{position:fixed;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;background:#111827;border:1px solid rgba(148,163,184,.2)}
-    .wfull{width:100%}
-    .center{text-align:center}
-    .link{background:transparent;border:none;padding:6px 0;color:#93c5fd;text-decoration:underline;cursor:pointer}
-    .sep{height:1px;background:rgba(148,163,184,.15);margin:14px 0}
-    /* Écran de boot pour éviter le flash */
-    .boot{position:fixed;inset:0;display:grid;place-items:center;background:#0b1220;z-index:60}
+    main {min-height:65vh}
+    .card {
+      background:linear-gradient(180deg,rgba(17,24,39,.9),rgba(2,6,23,.7));
+      border:1px solid rgba(148,163,184,.15);
+      border-radius:18px;padding:24px;
+      box-shadow:0 8px 25px rgba(0,0,0,.25);
+    }
+    footer {
+      border-top:1px solid rgba(148,163,184,.15);
+      padding:24px 0;color:var(--muted);
+    }
+
+    /* === AUTH PAGE FIXE === */
+    .auth-wrap {
+      position:fixed; /* page fixe */
+      inset:0;
+      display:grid;
+      place-items:center;
+      background:#0b1220;
+      overflow:hidden; /* bloque le scroll */
+      z-index:40;
+    }
+    .auth {
+      width:90%; max-width:420px;
+      background:var(--card);
+      border-radius:16px;
+      padding:24px;
+      text-align:center;
+      animation:fadeIn .4s ease-out;
+    }
+    @keyframes fadeIn {from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:left}
+    input {
+      padding:12px 14px;border-radius:10px;border:1px solid rgba(148,163,184,.25);
+      background:#0b1220;color:var(--text);
+    }
+    input:focus{border-color:var(--accent);outline:none}
+    label{font-size:.9rem;color:#cbd5e1}
+    .subtitle{color:var(--muted);font-size:.95rem;margin-bottom:16px}
+    .btn.full{width:100%}
+    .sep{height:1px;background:rgba(148,163,184,.15);margin:16px 0}
+    .link{border:none;background:none;color:#60a5fa;cursor:pointer;font-size:.95rem}
+    .toast {
+      position:fixed;bottom:16px;right:16px;
+      padding:12px 14px;border-radius:10px;
+      background:#111827;border:1px solid rgba(148,163,184,.2)
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="container nav">
       <div class="brand">
-        <img src="/logoalarm-192.png" alt="Logo" />
-        <span id="brandText">anassiri.com</span> <!-- texte discret du site -->
-        <span id="auth-badge" class="badge hidden">Déconnecté</span>
+        <img src="/logoalarm-192.png" alt="AN">
+        <span id="brandText">anassiri.com</span>
+        <span id="auth-badge" class="hidden">Déconnecté</span>
       </div>
       <nav id="navMenu" class="menu">
         <a href="#/" class="btn">Accueil</a>
@@ -71,43 +115,31 @@
   </header>
 
   <main class="container">
-    <!-- PAGE AUTH (pro, un seul bouton principal) -->
+    <!-- PAGE AUTH FIXE -->
     <section id="page-auth" class="auth-wrap hidden">
-      <div class="card auth">
+      <div class="auth">
         <h1>Créer un compte</h1>
-        <p class="subtitle">Inscris-toi pour accéder à ton calendrier.</p>
-
+        <p class="subtitle">Accède à ton calendrier AN en toute simplicité.</p>
         <div class="field">
           <label for="email">Email</label>
-          <input id="email" type="email" placeholder="ex: vous@mail.com" autocomplete="email" />
+          <input id="email" type="email" placeholder="ex: vous@mail.com" />
         </div>
         <div class="field">
           <label for="password">Mot de passe</label>
-          <input id="password" type="password" placeholder="Au moins 6 caractères" autocomplete="current-password" />
+          <input id="password" type="password" placeholder="•••••••" />
         </div>
-
-        <button id="signup" class="btn primary wfull">S’inscrire</button>
-
+        <button id="signup" class="btn primary full">S’inscrire</button>
         <div class="sep"></div>
-
-        <p class="center muted">Déjà un compte ?</p>
+        <p class="subtitle">Déjà inscrit ?</p>
         <button id="signin" class="link">Se connecter</button>
       </div>
     </section>
 
     <!-- PAGE ACCUEIL -->
-    <section id="page-home" class="grid cols-2 hidden">
+    <section id="page-home" class="hidden">
       <div class="card">
         <h2>Bienvenue 👋</h2>
-        <p>Tu es connecté. Ici on mettra ton <strong>résumé de rendez-vous</strong> et actions rapides.</p>
-      </div>
-      <div class="card">
-        <h2>Prochaines actions</h2>
-        <ul>
-          <li>Ajouter un rendez-vous</li>
-          <li>Importer depuis Google Calendar (à venir)</li>
-          <li>Activer les notifications (à venir)</li>
-        </ul>
+        <p>Tu es connecté. Voici ton résumé de rendez-vous.</p>
       </div>
     </section>
 
@@ -115,7 +147,7 @@
     <section id="page-rdv" class="hidden">
       <div class="card">
         <h2>Rendez-vous</h2>
-        <p class="muted">Bientôt ici la gestion complète (Firestore CRUD)</p>
+        <p class="subtitle">Gestion complète à venir</p>
       </div>
     </section>
 
@@ -135,14 +167,12 @@
   </footer>
 
   <div id="toast" class="toast hidden"></div>
-  <div id="boot" class="boot">Chargement…</div>
 
-  <!-- Firebase (COMPAT UNIQUEMENT) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
 
   <script>
-    /* ===== CONFIG FIREBASE ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
       authDomain: "productvues.firebaseapp.com",
@@ -151,95 +181,77 @@
       messagingSenderId: "268641672431",
       appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
     };
-    /* =========================== */
-
-    // Init + Auth
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
-    // Elements
-    const pageAuth   = document.getElementById('page-auth');
-    const pageHome   = document.getElementById('page-home');
-    const pageRDV    = document.getElementById('page-rdv');
+    const pageAuth = document.getElementById('page-auth');
+    const pageHome = document.getElementById('page-home');
+    const pageRDV = document.getElementById('page-rdv');
     const pageProfil = document.getElementById('page-profil');
-    const loginBtn   = document.getElementById('loginBtn');
-    const logoutBtn  = document.getElementById('logoutBtn');
-    const badge      = document.getElementById('auth-badge');
-    const brandText  = document.getElementById('brandText'); // NEW
-    const navMenu    = document.getElementById('navMenu');   // NEW
-    const emailEl    = document.getElementById('email');
-    const passEl     = document.getElementById('password');
-    const toast      = document.getElementById('toast');
-    const boot       = document.getElementById('boot');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const navMenu = document.getElementById('navMenu');
+    const brandText = document.getElementById('brandText');
+    const badge = document.getElementById('auth-badge');
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const toast = document.getElementById('toast');
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Routes
     const routes = {
       '#/': () => show(auth.currentUser ? 'home' : 'auth'),
       '#/auth': () => show('auth'),
       '#/rendezvous': () => guard(() => show('rdv')),
-      '#/profil': () => guard(() => show('profil')),
+      '#/profil': () => guard(() => show('profil'))
     };
 
     function guard(fn){
-      if(!auth.currentUser){ location.hash = '#/auth'; notify('Connecte-toi'); return; }
+      if(!auth.currentUser){ location.hash='#/auth'; notify('Connecte-toi'); return; }
       fn();
     }
 
     function show(page){
-      [pageAuth,pageHome,pageRDV,pageProfil].forEach(s=>s.classList.add('hidden'));
-      if(page==='auth')   pageAuth.classList.remove('hidden');
-      if(page==='home')   pageHome.classList.remove('hidden');
-      if(page==='rdv')    pageRDV.classList.remove('hidden');
+      [pageAuth,pageHome,pageRDV,pageProfil].forEach(p=>p.classList.add('hidden'));
+      if(page==='auth') pageAuth.classList.remove('hidden');
+      if(page==='home') pageHome.classList.remove('hidden');
+      if(page==='rdv') pageRDV.classList.remove('hidden');
       if(page==='profil') pageProfil.classList.remove('hidden');
 
-      // NEW: sur la page d'auth, on cache tout le menu et les badges/texte
-      const onAuth = (page === 'auth');
+      const onAuth = page==='auth';
       navMenu.classList.toggle('hidden', onAuth);
+      brandText.classList.toggle('hidden', onAuth);
       badge.classList.toggle('hidden', onAuth || !auth.currentUser);
-      brandText.classList.toggle('hidden', onAuth); // masque le texte, ne garde que le logo
-
-      // bouton login du header visible seulement si pas connecté ET pas sur la page d'auth
-      const shouldShowHeaderLogin = !auth.currentUser && !onAuth;
-      loginBtn.classList.toggle('hidden', !shouldShowHeaderLogin);
+      loginBtn.classList.toggle('hidden', !(!auth.currentUser && !onAuth));
       logoutBtn.classList.toggle('hidden', !auth.currentUser);
-
       document.getElementById('profil-email').textContent = auth.currentUser?.email || '—';
     }
 
     function notify(msg){
       toast.textContent = msg; toast.classList.remove('hidden');
-      setTimeout(()=>toast.classList.add('hidden'), 2200);
+      setTimeout(()=>toast.classList.add('hidden'),2200);
     }
 
-    // Auth actions
     document.getElementById('signup').addEventListener('click', async ()=>{
-      const email = emailEl.value.trim();
-      const pass  = passEl.value.trim();
-      try{
-        await auth.createUserWithEmailAndPassword(email, pass);
+      try {
+        await auth.createUserWithEmailAndPassword(emailEl.value, passEl.value);
         notify('Compte créé !'); location.hash = '#/';
-      }catch(e){ notify(e.message); }
+      } catch(e){ notify(e.message); }
     });
 
     document.getElementById('signin').addEventListener('click', async ()=>{
-      const email = emailEl.value.trim();
-      const pass  = passEl.value.trim();
-      try{
-        await auth.signInWithEmailAndPassword(email, pass);
+      try {
+        await auth.signInWithEmailAndPassword(emailEl.value, passEl.value);
         notify('Connexion réussie'); location.hash = '#/';
-      }catch(e){ notify(e.message); }
+      } catch(e){ notify(e.message); }
     });
 
     logoutBtn.addEventListener('click', async ()=>{
       await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth';
     });
 
-    // Route après la réponse Firebase
-    function route(){ const h = location.hash || '#/'; (routes[h] || routes['#/'])(); }
-    auth.onAuthStateChanged(()=>{ if (boot) boot.remove(); route(); });
-    window.addEventListener('hashchange', route);
+    function route(){const h=location.hash||'#/';(routes[h]||routes['#/'])();}
+    auth.onAuthStateChanged(route);
+    window.addEventListener('hashchange',route);
   </script>
 </body>
 </html>
