@@ -21,7 +21,7 @@
     .brand{display:flex;align-items:center;gap:10px;font-weight:700}
     .brand img{width:34px;height:34px;border-radius:9px}
     .menu{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{padding:10px 14px;border-radius:12px;background:#0b1220;border:1px solid rgba(148,163,184,.25);cursor:pointer;color:var(--text);transition:.15s}
+    .btn{padding:10px 14px;border-radius:12px;background:#0b1220;border:1px solid rgba(148,163,184,.25);cursor:pointer;transition:.15s;color:var(--text)}
     .btn:hover{border-color:rgba(148,163,184,.45);transform:translateY(-1px)}
     .btn.primary{background:var(--accent);border-color:var(--accent);color:white}
     .btn.ghost{background:transparent;border-color:transparent}
@@ -56,11 +56,11 @@
   <header>
     <div class="container nav">
       <div class="brand">
-        <img src="/logoalarm-192.png" alt="AN" />
-        <span>Calendrier AN</span>
+        <img src="/logoalarm-192.png" alt="Logo" />
+        <span id="brandText">anassiri.com</span> <!-- texte discret du site -->
         <span id="auth-badge" class="badge hidden">Déconnecté</span>
       </div>
-      <nav class="menu">
+      <nav id="navMenu" class="menu">
         <a href="#/" class="btn">Accueil</a>
         <a href="#/rendezvous" class="btn">Rendez-vous</a>
         <a href="#/profil" class="btn">Profil</a>
@@ -142,7 +142,7 @@
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
 
   <script>
-    /* ===== CONFIG FIREBASE (remplace si besoin) ===== */
+    /* ===== CONFIG FIREBASE ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
       authDomain: "productvues.firebaseapp.com",
@@ -151,13 +151,11 @@
       messagingSenderId: "268641672431",
       appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
     };
-    /* =============================================== */
+    /* =========================== */
 
-    // Init + Auth (compat)
+    // Init + Auth
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-
-    // Persistance locale
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
     // Elements
@@ -168,13 +166,15 @@
     const loginBtn   = document.getElementById('loginBtn');
     const logoutBtn  = document.getElementById('logoutBtn');
     const badge      = document.getElementById('auth-badge');
+    const brandText  = document.getElementById('brandText'); // NEW
+    const navMenu    = document.getElementById('navMenu');   // NEW
     const emailEl    = document.getElementById('email');
     const passEl     = document.getElementById('password');
     const toast      = document.getElementById('toast');
     const boot       = document.getElementById('boot');
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Router simple (hash)
+    // Routes
     const routes = {
       '#/': () => show(auth.currentUser ? 'home' : 'auth'),
       '#/auth': () => show('auth'),
@@ -194,13 +194,17 @@
       if(page==='rdv')    pageRDV.classList.remove('hidden');
       if(page==='profil') pageProfil.classList.remove('hidden');
 
-      // ✅ Plus de doublon : cache le bouton header "Se connecter" sur la page d’auth
-      const shouldShowHeaderLogin = !auth.currentUser && page !== 'auth';
-      loginBtn.classList.toggle('hidden', !shouldShowHeaderLogin);
+      // NEW: sur la page d'auth, on cache tout le menu et les badges/texte
+      const onAuth = (page === 'auth');
+      navMenu.classList.toggle('hidden', onAuth);
+      badge.classList.toggle('hidden', onAuth || !auth.currentUser);
+      brandText.classList.toggle('hidden', onAuth); // masque le texte, ne garde que le logo
 
+      // bouton login du header visible seulement si pas connecté ET pas sur la page d'auth
+      const shouldShowHeaderLogin = !auth.currentUser && !onAuth;
+      loginBtn.classList.toggle('hidden', !shouldShowHeaderLogin);
       logoutBtn.classList.toggle('hidden', !auth.currentUser);
-      badge.textContent = auth.currentUser ? 'Connecté' : 'Déconnecté';
-      badge.classList.remove('hidden');
+
       document.getElementById('profil-email').textContent = auth.currentUser?.email || '—';
     }
 
@@ -209,7 +213,7 @@
       setTimeout(()=>toast.classList.add('hidden'), 2200);
     }
 
-    // Actions Auth
+    // Auth actions
     document.getElementById('signup').addEventListener('click', async ()=>{
       const email = emailEl.value.trim();
       const pass  = passEl.value.trim();
@@ -232,14 +236,9 @@
       await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth';
     });
 
-    // Routing après la réponse de Firebase (pas de flash)
+    // Route après la réponse Firebase
     function route(){ const h = location.hash || '#/'; (routes[h] || routes['#/'])(); }
-
-    auth.onAuthStateChanged(()=>{
-      if (boot) boot.remove();
-      route();
-    });
-
+    auth.onAuthStateChanged(()=>{ if (boot) boot.remove(); route(); });
     window.addEventListener('hashchange', route);
   </script>
 </body>
