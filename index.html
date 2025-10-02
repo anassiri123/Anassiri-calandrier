@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calendrier AN — Accueil</title>
-  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- Icône & Manifest PWA -->
   <link rel="icon" href="/logoalarm-192.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#0f172a" />
+
   <style>
     :root{--bg:#0f172a;--card:#111827;--muted:#6b7280;--accent:#2563eb;--text:#e5e7eb}
     *{box-sizing:border-box}
@@ -36,6 +39,8 @@
     .hidden{display:none!important}
     .badge{padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.25);font-size:.75rem;color:#cbd5e1}
     .toast{position:fixed;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;background:#111827;border:1px solid rgba(148,163,184,.2)}
+    /* Écran de boot pour éviter le flash */
+    .boot{position:fixed;inset:0;display:grid;place-items:center;background:#0b1220;z-index:60}
   </style>
 </head>
 <body>
@@ -117,13 +122,14 @@
   </footer>
 
   <div id="toast" class="toast hidden"></div>
+  <div id="boot" class="boot">Chargement…</div>
 
   <!-- Firebase (COMPAT UNIQUEMENT) -->
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
 
   <script>
-    /* ===== COLLE ICI TA CONFIG FIREBASE (compat) ===== */
+    /* ===== CONFIG FIREBASE (remplace si besoin) ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyBfPvC5GtwKvG9TD7cLRo_WlPfifHhxfOU",
       authDomain: "productvues.firebaseapp.com",
@@ -132,23 +138,27 @@
       messagingSenderId: "268641672431",
       appId: "1:268641672431:web:a4a5ec6d62fca218c5cf1a"
     };
-    /* ===== FIN CONFIG ===== */
+    /* =============================================== */
 
     // Init + Auth (compat)
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
+    // (optionnel) Persistance locale explicite
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+
     // Elements
-    const pageAuth = document.getElementById('page-auth');
-    const pageHome = document.getElementById('page-home');
-    const pageRDV = document.getElementById('page-rdv');
+    const pageAuth   = document.getElementById('page-auth');
+    const pageHome   = document.getElementById('page-home');
+    const pageRDV    = document.getElementById('page-rdv');
     const pageProfil = document.getElementById('page-profil');
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const badge = document.getElementById('auth-badge');
-    const emailEl = document.getElementById('email');
-    const passEl = document.getElementById('password');
-    const toast = document.getElementById('toast');
+    const loginBtn   = document.getElementById('loginBtn');
+    const logoutBtn  = document.getElementById('logoutBtn');
+    const badge      = document.getElementById('auth-badge');
+    const emailEl    = document.getElementById('email');
+    const passEl     = document.getElementById('password');
+    const toast      = document.getElementById('toast');
+    const boot       = document.getElementById('boot');
     document.getElementById('year').textContent = new Date().getFullYear();
 
     // Router simple (hash)
@@ -166,9 +176,9 @@
 
     function show(page){
       [pageAuth,pageHome,pageRDV,pageProfil].forEach(s=>s.classList.add('hidden'));
-      if(page==='auth') pageAuth.classList.remove('hidden');
-      if(page==='home') pageHome.classList.remove('hidden');
-      if(page==='rdv') pageRDV.classList.remove('hidden');
+      if(page==='auth')   pageAuth.classList.remove('hidden');
+      if(page==='home')   pageHome.classList.remove('hidden');
+      if(page==='rdv')    pageRDV.classList.remove('hidden');
       if(page==='profil') pageProfil.classList.remove('hidden');
       loginBtn.classList.toggle('hidden', !!auth.currentUser);
       logoutBtn.classList.toggle('hidden', !auth.currentUser);
@@ -182,7 +192,7 @@
       setTimeout(()=>toast.classList.add('hidden'), 2200);
     }
 
-    // Actions auth
+    // Actions Auth
     document.getElementById('signup').addEventListener('click', async ()=>{
       const email = emailEl.value.trim();
       const pass  = passEl.value.trim();
@@ -201,10 +211,15 @@
       await auth.signOut(); notify('Déconnecté'); location.hash = '#/auth';
     });
 
-    // État + routing
-    auth.onAuthStateChanged(()=>{ const h = location.hash || '#/'; (routes[h]||routes['#/'])(); });
-    window.addEventListener('hashchange', ()=>{ const h = location.hash || '#/'; (routes[h]||routes['#/'])(); });
-    (routes[location.hash] || routes['#/'])();
+    // Routing UNIQUEMENT après la réponse de Firebase (évite le flash)
+    function route(){ const h = location.hash || '#/'; (routes[h] || routes['#/'])(); }
+
+    auth.onAuthStateChanged(()=>{
+      if (boot) boot.remove();  // retire l’écran de chargement
+      route();
+    });
+
+    window.addEventListener('hashchange', route);
   </script>
 </body>
 </html>
